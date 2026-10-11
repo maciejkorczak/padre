@@ -1,8 +1,8 @@
 // Składa index.html z szablonu src/index.html, treści z src/content.mjs,
 // manifestu zdjęć i konfiguracji assets/js/config.js.
 //
-//   node scripts/build-html.mjs            -> index.html (produkcja: bez notatek podglądu)
-//   node scripts/build-html.mjs --preview  -> dist-preview/site/index.html (z notatkami do akceptacji)
+//   node scripts/build-html.mjs            -> index.html
+//   node scripts/build-html.mjs --preview  -> dist-preview/site/index.html (baza dla podglądu-artefaktu)
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -97,17 +97,15 @@ function faqItem(item, id) {
   const contacts = item.contacts ? `<ul class="faq__contacts">${item.contacts.map((c) => `<li><span>${esc(c.label)}:</span> <a href="mailto:${c.email}">${c.email}</a></li>`).join('')}</ul>` : '';
   const links = item.links ? `<ul class="faq__links">${item.links.map((l) => `<li><a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)}</a></li>`).join('')}</ul>` : '';
   const ticket = item.ticket ? '<p><a class="btn btn--primary btn--sm" href="#bilety" data-ticket="faq">Kup bilet</a></p>' : '';
-  const note = item.note ? `<p class="preview-note note-box">${esc(item.note)}</p>` : '';
-  const unconf = item.unconfirmed ? ' data-unconfirmed' : '';
-  return `<div class="acc"${unconf}>
+  return `<div class="acc">
         <h3 class="acc__h"><button class="acc__btn" type="button" id="${id}-btn" aria-expanded="false" aria-controls="${id}-panel" data-acc-btn>${esc(item.q)}<span class="acc__icon" aria-hidden="true"></span></button></h3>
         <div class="acc__panel" id="${id}-panel" role="region" aria-labelledby="${id}-btn" data-acc-panel>
-          <div class="acc__inner">${paras}${list}${contacts}${links}${ticket}${note}</div>
+          <div class="acc__inner">${paras}${list}${contacts}${links}${ticket}</div>
         </div>
       </div>`;
 }
 const faq = `<div class="acc-group reveal" data-acc>
-      ${FAQ_MAIN.filter((q) => PREVIEW || !q.unconfirmed).map((q, i) => faqItem(q, `faq-${i + 1}`)).join('\n      ')}
+      ${FAQ_MAIN.map((q, i) => faqItem(q, `faq-${i + 1}`)).join('\n      ')}
       </div>
       <h3 class="faq__more-title reveal">Pozostałe pytania</h3>
       <div class="acc-group reveal" data-acc>
@@ -165,14 +163,6 @@ if (config.ticketUrl) {
 if (config.accreditationReady && config.accreditationUrl) {
   html = html.replace('<a class="btn btn--primary" href="#media" data-accreditation hidden>', `<a class="btn btn--primary" href="${esc(config.accreditationUrl)}" target="_blank" rel="noopener" data-accreditation>`);
   html = html.replace(/<p class="media__pending reveal" data-accreditation-pending>[\s\S]*?<\/p>\s*/, '');
-}
-
-if (PREVIEW) {
-  html = html.replace('<html lang="pl">', '<html lang="pl" class="is-preview">');
-} else {
-  // Produkcja: bez notatek podglądu i bez niepotwierdzonych elementów.
-  html = html.replace(/<(p|div)\b[^>]*\bclass="[^"]*\bpreview-note\b[^"]*"[^>]*>[\s\S]*?<\/\1>\s*/g, '');
-  html = html.replace(/<(ul|div)\b[^>]*\sdata-unconfirmed\b[^>]*>[\s\S]*?<\/\1>\s*/g, '');
 }
 
 // Wersjonowanie CSS i JS (bezpieczny długi cache na serwerze).

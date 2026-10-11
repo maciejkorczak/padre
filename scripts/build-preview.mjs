@@ -1,4 +1,4 @@
-// Buduje podgląd do akceptacji (z notatkami „Do potwierdzenia”) w formacie strony-artefaktu claude.ai:
+// Buduje podgląd strony w formacie strony-artefaktu claude.ai:
 // bez <html>/<head>/<body>, fonty z Google Fonts, zasoby jako osobne pliki obok strony.
 //   node scripts/build-preview.mjs  -> dist-preview/site/ (+ files.json z listą plików do publikacji)
 import { execFileSync } from 'node:child_process';
@@ -23,7 +23,7 @@ const page = `<title>Padre Guilherme Atlas Arena</title>
 <link rel="stylesheet" href="assets/css/main.css">
 <style>.site-header { top: env(safe-area-inset-top, 0px); }</style>
 <script src="assets/js/config.js"></script>
-<script>document.documentElement.classList.add('js', 'is-preview'); setTimeout(function () { if (!window.__pgReady) document.documentElement.classList.remove('js'); }, 3000);</script>
+<script>document.documentElement.classList.add('js'); setTimeout(function () { if (!window.__pgReady) document.documentElement.classList.remove('js'); }, 3000);</script>
 <script src="assets/js/main.js" defer></script>
 ${jsonld}
 ${body}`;

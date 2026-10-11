@@ -46,29 +46,27 @@ const OSWIADCZENIE = { href: 'assets/docs/oswiadczenie-opiekuna-maloletniego.pdf
 const REGULAMIN = { href: 'assets/docs/regulamin-live2listen.pdf', label: 'Regulamin wydarzeń Live2Listen (PDF)' };
 const ODSPRZEDAZ = 'Bilety na wydarzenia Live2Listen nie podlegają standardowemu zwrotowi, z wyjątkiem przypadków przewidzianych w przepisach prawa lub regulaminie sprzedaży. Jeśli nie możesz przyjść, skorzystaj z oficjalnej odsprzedaży w aplikacji eBilet — będzie dostępna najpóźniej tydzień przed koncertem.';
 
-// 12 pytań w kolejności z briefu. `unconfirmed` = brak potwierdzonej odpowiedzi:
-// pytanie widać tylko w podglądzie, na produkcji jest pomijane (nie publikujemy pustych odpowiedzi).
+// Pytania w kolejności z briefu. Pytania o miejsca siedzące i bilety VIP dodamy,
+// gdy organizator potwierdzi odpowiedzi (nie publikujemy pustych odpowiedzi).
 export const FAQ_MAIN = [
   { q: 'Gdzie kupić bilety?', a: ['Oficjalna sprzedaż biletów prowadzona jest wyłącznie w serwisie eBilet. Kupuj tylko tam: bilety z innych źródeł mogą okazać się nieważne, a bilet nabyty z naruszeniem regulaminu może zostać unieważniony przez organizatora.'], ticket: true },
   { q: 'Kiedy i gdzie odbędzie się koncert?', a: ['W niedzielę 14 lutego 2027 roku w Atlas Arenie w Łodzi, al. Bandurskiego 7.'] },
-  { q: 'O której godzinie rozpocznie się wydarzenie?', a: ['Planowany harmonogram: 18:00 otwarcie bram, 19:00 support, 20:00 Skytech, 21:00 Padre Guilherme.', 'Godziny otwarcia bram i rozpoczęcia koncertu znajdziesz też na bilecie. Dzień przed koncertem sprawdź aktualne informacje na tej stronie. Przyjdź wcześniej, żeby uniknąć kolejek przy wejściu.'], note: 'Godziny do potwierdzenia przez organizatora.' },
-  { q: 'Jak dojechać do Atlas Areny?', a: ['Atlas Arena znajduje się przy al. Bandurskiego 7 w Łodzi. Organizator zachęca do korzystania z komunikacji miejskiej lub taxi — oszczędzisz czas na szukaniu miejsca parkingowego.'], links: [{ href: 'https://atlasarena.pl', label: 'Dojazd i parkingi: atlasarena.pl', external: true }], note: 'Do uzupełnienia: szczegóły parkingu i komunikacji (organizator / Atlas Arena).' },
-  { q: 'Czy dostępne są miejsca siedzące?', unconfirmed: true, a: ['DO UZUPEŁNIENIA: układ sali i kategorie biletów (płyta, trybuny) — czekamy na potwierdzenie organizatora. Na produkcji pytanie pojawi się dopiero z potwierdzoną odpowiedzią.'] },
-  { q: 'Czy można kupić bilety VIP?', unconfirmed: true, a: ['DO UZUPEŁNIENIA: czy w sprzedaży będą bilety VIP i co obejmują. Na produkcji pytanie pojawi się dopiero z potwierdzoną odpowiedzią.'] },
+  { q: 'O której godzinie rozpocznie się wydarzenie?', a: ['Planowany harmonogram: 18:00 otwarcie bram, 19:00 support, 20:00 Skytech, 21:00 Padre Guilherme.', 'Godziny otwarcia bram i rozpoczęcia koncertu znajdziesz też na bilecie. Dzień przed koncertem sprawdź aktualne informacje na tej stronie. Przyjdź wcześniej, żeby uniknąć kolejek przy wejściu.'] },
+  { q: 'Jak dojechać do Atlas Areny?', a: ['Atlas Arena znajduje się przy al. Bandurskiego 7 w Łodzi. Organizator zachęca do korzystania z komunikacji miejskiej lub taxi — oszczędzisz czas na szukaniu miejsca parkingowego.'], links: [{ href: 'https://atlasarena.pl', label: 'Dojazd i parkingi: atlasarena.pl', external: true }] },
   { q: 'Czy osoby niepełnoletnie mogą uczestniczyć?', a: [
     'Tak. Osoby, które ukończyły 16 lat, mogą wejść samodzielnie z ważnym biletem i dokumentem potwierdzającym wiek. Brak dokumentu oznacza odmowę wstępu bez opiekuna.',
     'Osoby poniżej 16 lat mogą uczestniczyć w koncercie wyłącznie pod opieką osoby dorosłej i na jej odpowiedzialność. Bilet jest potrzebny zarówno dla dziecka, jak i dla opiekuna, a opiekun musi mieć wypełnione oświadczenie opiekuna małoletniego. Jedna osoba dorosła może być opiekunem maksymalnie pięciorga niepełnoletnich.',
     'Dzieci, które w dniu koncertu nie mają ukończonych 3 lat, wchodzą bezpłatnie. Zabierz dokument potwierdzający ich wiek i słuchawki ochronne.'], links: [OSWIADCZENIE, REGULAMIN] },
   { q: 'Jak wygląda dostępność dla osób z niepełnosprawnościami?', a: [
     'Jeśli osoba z niepełnosprawnością przychodzi z opiekunem, bilet potrzebny jest dla każdej z tych osób.',
-    'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet — obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'], note: 'Do uzupełnienia: kontakt w sprawie dostępności i informacje Atlas Areny.' },
+    'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet — obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'] },
   { q: 'Czy bilety można przekazać innej osobie?', a: ['Tak, bilet możesz przekazać innej osobie w aplikacji eBilet.', ODSPRZEDAZ] },
   { q: 'Jak skontaktować się z organizatorem?', a: [
     'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). W sprawach zakupu biletu, braku biletu w e-mailu lub kodu QR kontaktuj się z eBilet.'], contacts: [
     { label: 'Organizator', email: 'hello@live2listen.com' },
     { label: 'Rzeczy zgubione na koncercie', email: 'lost@live2listen.com' },
     { label: 'Media', email: 'media@padreguilherme.pl' },
-    { label: 'Partnerstwo', email: 'info@padreguilherme.pl' }], note: 'Adres hello@live2listen.com pochodzi z regulaminu (szatnia) — potwierdzić jako kontakt ogólny.' },
+    { label: 'Partnerstwo', email: 'info@padreguilherme.pl' }] },
   { q: 'Co w przypadku zmiany terminu?', a: ['Jeśli koncert zostanie przeniesiony na inny termin lub do innego obiektu, kupione bilety zachowują ważność i nie trzeba ich wymieniać. O zmianie poinformuje Cię e-mailem dystrybutor biletów, a organizator opublikuje informację w swoich kanałach i na tej stronie.'] },
   { q: 'Co w przypadku odwołania wydarzenia?', a: ['Jeśli wydarzenie zostanie odwołane, przysługuje Ci zwrot pieniędzy za bilet. Skontaktuj się z dystrybutorem biletów, czyli z eBilet.'] },
 ];

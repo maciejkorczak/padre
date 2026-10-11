@@ -2,7 +2,7 @@
 
 Atlas Arena, Łódź, 14.02.2027. Stan na 11.10.2026.
 
-- Podgląd do akceptacji (z notatkami „Do potwierdzenia”): https://claude.ai/artifact/MaMj6ZkCbBELkMe9iNnrDC
+- Podgląd strony: https://claude.ai/artifact/MaMj6ZkCbBELkMe9iNnrDC
 - Kopia bezpieczeństwa poprzedniej wersji: `design/canvas-v1/` (osobny commit przed zmianami).
 - Nic nie zostało opublikowane na produkcji.
 
@@ -35,7 +35,7 @@ Poprzednia wersja (kanwa projektowa) została przeniesiona do samodzielnej, stat
 9. Skytech jako Official support: zdjęcie, opis, skytechmusic.com, miniatura wideo YouTube (link, bez osadzania).
 10. Plan wieczoru.
 11. Informacje i bilety: karta biletowa (na telefonie przed listą informacji), dane praktyczne, regulamin, oświadczenie opiekuna.
-12. FAQ: 12 pytań w kolejności z briefu i „Pozostałe pytania” z FAQ organizatora.
+12. FAQ: 10 pytań w kolejności z briefu (pytania o miejsca siedzące i VIP dojdą po potwierdzeniu odpowiedzi) i „Pozostałe pytania” z FAQ organizatora.
 13. Media i akredytacje (przycisk „Złóż wniosek o akredytację”) oraz kontakt w sprawie partnerstwa.
 14. Końcowe CTA i stopka (role podmiotów, dane organizatora, linki prawne, kanały oficjalne).
 
@@ -55,7 +55,6 @@ Poprzednia wersja (kanwa projektowa) została przeniesiona do samodzielnej, stat
 - SEO: title i description z briefu, canonical, Open Graph i Twitter Card z nową grafiką 1200×630, `robots.txt`, `sitemap.xml`, dane strukturalne MusicEvent (data, miejsce z adresem, wykonawcy, organizator; bez cen i dostępności, oferta dopiero z linkiem eBilet), jeden H1, poprawna hierarchia nagłówków.
 - Dostępność: link „Przejdź do treści”, widoczny fokus, menu i lightbox z pułapką fokusu i obsługą ESC, akordeon z `aria-expanded`/`aria-controls`, teksty alternatywne, kontrast AA, cele dotykowe ≥ 44 px dla przycisków, `prefers-reduced-motion`.
 - Konfiguracja wszystkich integracji w jednym pliku (`assets/js/config.js`).
-- Tryb podglądu: notatki „Do potwierdzenia” i niepotwierdzone elementy widać tylko w wersji do akceptacji. Build produkcyjny je usuwa.
 - Testy automatyczne (`npm test`) i generator zrzutów ekranu.
 
 ## B. Copywriting: najważniejsze poprawki
@@ -137,7 +136,7 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 
 ## H. Testy
 
-**Automatyczne: `npm test` — 97/97 zaliczone** (Playwright, Chromium 141):
+**Automatyczne: `npm test` — 98/98 zaliczone** (Playwright, Chromium 141):
 - produkcyjny HTML: brak zakazanych sformułowań, brak notatek podglądu, brak linku do strony głównej eBilet, poprawne title, description, canonical, OG, JSON-LD;
 - desktop 1440: jeden H1, hierarchia nagłówków, 8 przycisków „Kup bilet” o jednej nazwie (+ link w stopce), brak poziomego przewijania, brak błędów w konsoli, wszystkie obrazy z `alt`;
 - lightbox: otwieranie, fokus, strzałki, zapętlenie, pułapka fokusu, ESC, powrót fokusu; gest przesunięcia na telefonie;
@@ -169,7 +168,6 @@ W `docs/screenshots/`:
 - **Przed:** `przed-desktop-hero.jpg`, `przed-desktop-calosc.jpg`, `przed-mobile-hero.jpg`, `przed-mobile-calosc.jpg` (statyczny render kanwy v1 z tymi samymi zdjęciami).
 - **Po, komputer:** `po-desktop-hero`, `-tiktok`, `-djmag`, `-bio`, `-galeria`, `-lightbox`, `-love`, `-skytech`, `-bilety`, `-faq`, `-media`, `-stopka`.
 - **Po, telefon:** `po-mobile-hero`, `-menu`, `-sticky`, `-tiktok`, `-galeria`, `-lightbox`, `-bilety`, `-final`.
-- **Podgląd z notatkami:** `podglad-desktop-notatki`, `podglad-desktop-bilety-notatki`.
 
 ## J. Status
 
@@ -182,3 +180,4 @@ Po dostarczeniu punktów 1–2 z sekcji G i akceptacji treści: `npm run html`, 
 
 - Sekcja „Polska już go zna. Teraz czas na Łódź.” usunięta w całości (szablon, style, konfiguracja, notatki). Karta TikToka z „Pan jest pasterzem moim” ma podpis „Polska”, bez nazw innych miast.
 - Akredytacje: przycisk „Złóż wniosek o akredytację” włączony z adresem www.pressaccreditations.com/pl/live2listen/padreguilherme (wpisany także w HTML, działa bez JavaScriptu).
+- Usunięte wszystkie notatki „Do potwierdzenia” ze strony (także z podglądu), lista kategorii biletów „do potwierdzenia” i dwa pytania FAQ bez potwierdzonych odpowiedzi (miejsca siedzące, VIP). Otwarte kwestie są tylko w `docs/DO-POTWIERDZENIA.md`.

@@ -24,7 +24,7 @@ Legenda: **BLOKER**: bez tego strona nie powinna wyjść na produkcję. **WAŻNE
 | 9 | **Plakat z hasłem „Pierwsze headline show”** | Nie jest wyświetlany. Hasło jest sprzeczne z faktami: artysta grał już w Polsce (Chorzów 12.06.2026, Gdańsk 15.08.2026, Opole 4.09.2026). Potrzebna nowa wersja plakatu bez tego hasła albo pisemne potwierdzenie, że chodzi np. o „pierwszy samodzielny koncert halowy”. |
 | 10 | **Harmonogram 18:00 / 19:00 / 20:00 / 21:00** | Pokazany na stronie (przekazany przez zespół). Do potwierdzenia przez organizatora. Odliczanie liczy czas do 18:00. |
 | 11 | **Kim jest support o 19:00** | Na stronie widnieje samo „Support”. |
-| 12 | **Kategorie i ceny biletów (płyta, trybuny, VIP)** | Niepotwierdzone, więc ukryte na produkcji. Pytania FAQ „Czy dostępne są miejsca siedzące?” i „Czy można kupić bilety VIP?” pojawią się dopiero z potwierdzoną odpowiedzią. |
+| 12 | **Kategorie i ceny biletów (płyta, trybuny, VIP)** | Niepotwierdzone, więc ukryte na produkcji. Pytania FAQ „Czy dostępne są miejsca siedzące?” i „Czy można kupić bilety VIP?” zostały usunięte; dodamy je z potwierdzoną odpowiedzią. |
 | 13 | **Spółka organizatora** | Regulamin mówi, że organizatorem może być L2L sp. z o.o. albo 828 Studio sp. z o.o. W stopce wpisano L2L sp. z o.o. (ul. Opoczyńska 12/6, Warszawa, KRS 0001121413). |
 | 14 | **Role partnerów w stopce** | Zostawiono układ zatwierdzony wcześniej: Organizator: Live2Listen · Bilety: eBilet · Partnerzy: Atlas Arena, Koolwaters, Booking Artist Agency. Do potwierdzenia: czy Atlas Arenę opisać jako obiekt, a Booking Artist Agency jako booking. |
 | 15 | **Ogólny kontakt do organizatora** | FAQ podaje hello@live2listen.com (adres z regulaminu, rozdział o szatni) i lost@live2listen.com (z FAQ Live2Listen). |

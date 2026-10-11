@@ -34,7 +34,7 @@ npm run serve              # http://localhost:8080
 npm run assets             # og-image.jpg i apple-touch-icon.png (wymaga uruchomionego serve)
 npm test                   # testy funkcjonalne + zrzuty do docs/screenshots
 npm test -- --links        # dodatkowo sprawdza linki zewnętrzne
-npm run preview            # wersja do akceptacji z notatkami „Do potwierdzenia” -> dist-preview/site
+npm run preview            # podgląd w formacie artefaktu claude.ai -> dist-preview/site
 ```
 
 ## Podłączanie integracji

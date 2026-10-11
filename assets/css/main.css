@@ -72,7 +72,6 @@
   --accent: #E8834E;
   --accent-2: #F2A077;
   --ink: #150D08;
-  --warn: #F5C451;
   --f-body: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --f-display: 'Saira', 'Arial Narrow', system-ui, sans-serif;
   --f-script: 'Pinyon Script', 'Snell Roundhand', 'Apple Chancery', cursive;
@@ -465,9 +464,6 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 .ticket-card__facts { display: grid; gap: 10px; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 0.875rem; color: var(--fg-2); }
 .ticket-card__facts li { position: relative; padding-left: 18px; }
 .ticket-card__facts li::before { content: ''; position: absolute; left: 0; top: 0.65em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.ticket-cats { margin-top: 18px; display: grid; gap: 8px; }
-.ticket-cats li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); font-weight: 700; }
-.ticket-cats li span + span { font-weight: 500; color: var(--fg-3); font-size: 0.875rem; }
 @media (min-width: 960px) {
   .tickets__grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 56px; }
   .tickets__grid > .info { grid-column: 1; grid-row: 1; }
@@ -600,17 +596,6 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 .consent p { margin-top: 8px; }
 .consent__opts { margin-top: 8px; }
 .consent__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-
-/* ==== Tryb podglądu (notatki tylko do akceptacji) ==== */
-.preview-note { display: none; }
-[data-unconfirmed] { display: none !important; }
-.is-preview .preview-note { display: block; }
-.is-preview [data-unconfirmed] { display: block !important; outline: 1px dashed var(--warn); outline-offset: 4px; }
-.is-preview .ticket-cats[data-unconfirmed] { display: grid !important; }
-.note-box { margin-top: 16px; padding: 10px 14px; border: 1px dashed var(--warn); border-radius: var(--radius); background: rgba(245, 196, 81, 0.07); color: var(--warn); font-size: 0.8125rem; line-height: 1.5; }
-.note-box::before { content: 'Do potwierdzenia · '; font-weight: 800; letter-spacing: 0.04em; }
-.preview-bar { position: relative; z-index: 60; padding: 10px var(--gutter); background: var(--warn); color: #241A00; font-size: 0.8125rem; line-height: 1.45; text-align: center; }
-.is-preview .preview-bar { display: block; }
 
 /* ==== Ograniczony ruch ==== */
 @media (prefers-reduced-motion: reduce) {

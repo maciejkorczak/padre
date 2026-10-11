@@ -80,6 +80,7 @@ async function shotSection(page, sel, name) {
 const html = await readFile(path.join(root, 'index.html'), 'utf8');
 const banned = [/headline show/i, /pierwsz\w* (samodzieln\w* )?koncert/i, /bilety ograniczone/i, /mesjasz edm/i, /techno msza/i, /spowied/i, /fenomenaln/i, /preview-note/, /data-unconfirmed/, /href="https?:\/\/(www\.)?ebilet\.pl\/?"/];
 for (const re of banned) check(`Produkcja: brak „${re.source}”`, !re.test(html));
+check('Brak notatek „Do potwierdzenia” / „Do uzupełnienia” na stronie', !/do potwierdzenia|do uzupełnienia/i.test(html));
 check('Title zgodny z briefem', html.includes('<title>Padre Guilherme w Polsce 2027 | Atlas Arena Łódź | Bilety</title>'));
 check('Meta description zgodny z briefem', html.includes('content="Padre Guilherme wystąpi 14 lutego 2027 w Atlas Arenie w Łodzi. Sprawdź informacje o wydarzeniu i kup bilety na eBilet."'));
 check('Canonical, OG, Twitter, robots', ['rel="canonical"', 'property="og:image"', 'name="twitter:card"', 'name="robots"'].every((s) => html.includes(s)));
