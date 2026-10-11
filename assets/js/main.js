@@ -6,7 +6,6 @@
   var doc = document;
   var root = doc.documentElement;
   var cfg = Object.assign({}, window.PADRE_CONFIG || {}, window.PADRE_CONFIG_OVERRIDE || {});
-  cfg.sections = Object.assign({}, (window.PADRE_CONFIG || {}).sections, (window.PADRE_CONFIG_OVERRIDE || {}).sections);
 
   var mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   var mqMotionDesktop = window.matchMedia('(min-width: 960px) and (hover: hover) and (pointer: fine)');

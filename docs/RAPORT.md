@@ -12,7 +12,8 @@ Kod jest gotowy i przetestowany, ale strona nie może jeszcze wyjść na produkc
 
 1. **Brak linku do wydarzenia w eBilet.** Przyciski „Kup bilet” prowadzą na razie do sekcji biletów z komunikatem. Wpisanie linku w `config.js` przełącza wszystkie przyciski naraz.
 2. **Domena padreguilherme.pl nie ma hostingu (brak rekordu A) ani poczty (brak rekordu MX).** Adresy info@ i media@ podane na stronie nie odbiorą wiadomości, dopóki skrzynki nie zostaną skonfigurowane.
-3. Treści wymagające decyzji managementu: plakat z hasłem „Pierwsze headline show”, sekcja „Polska już go zna”, harmonogram, kategorie biletów.
+3. Treści wymagające decyzji managementu: plakat z hasłem „Pierwsze headline show”, harmonogram, kategorie biletów.
+4. Strona formularza akredytacyjnego (adres potwierdzony) 11.10.2026 jeszcze nie działała: certyfikat TLS nie pasuje do domeny, HTTP 404.
 
 Pełna lista: [DO-POTWIERDZENIA.md](DO-POTWIERDZENIA.md).
 
@@ -28,16 +29,15 @@ Poprzednia wersja (kanwa projektowa) została przeniesiona do samodzielnej, stat
 3. TikTok: sześć najczęściej oglądanych nagrań (miniatura, miejsce, liczba wyświetleń, ikona odtwarzania, link do oryginału).
 4. DJ Mag Top 100 DJs 2026: duże „#79”, „New entry”, zdanie z briefu, informacja, że ranking powstaje z głosowania fanów.
 5. Biografia: widoczny tekst skrócony z 219 do 88 słów; dalsza część historii (ŚDM, festiwale, DJ Mag) pod przyciskiem „Poznaj historię Padre”; na końcu „Kup bilet”.
-6. „Polska już go zna. Teraz czas na Łódź.”: gotowy komponent, **wyłączony** (patrz G).
-7. Galeria edytorska: asymetryczny układ (duże, dwa mniejsze, szerokie, trzy), lightbox.
-8. Wybrane wydarzenia: 10 plakatów z linkami do stron wydarzeń, przewijana szyna.
-9. Love is My Religion: pełnoekranowe zdjęcie z paralaksą i przyciskiem „Kup bilet”.
-10. Skytech jako Official support: zdjęcie, opis, skytechmusic.com, miniatura wideo YouTube (link, bez osadzania).
-11. Plan wieczoru.
-12. Informacje i bilety: karta biletowa (na telefonie przed listą informacji), dane praktyczne, regulamin, oświadczenie opiekuna.
-13. FAQ: 12 pytań w kolejności z briefu i „Pozostałe pytania” z FAQ organizatora.
-14. Media i akredytacje oraz kontakt w sprawie partnerstwa.
-15. Końcowe CTA i stopka (role podmiotów, dane organizatora, linki prawne, kanały oficjalne).
+6. Galeria edytorska: asymetryczny układ (duże, dwa mniejsze, szerokie, trzy), lightbox.
+7. Wybrane wydarzenia: 10 plakatów z linkami do stron wydarzeń, przewijana szyna.
+8. Love is My Religion: pełnoekranowe zdjęcie z paralaksą i przyciskiem „Kup bilet”.
+9. Skytech jako Official support: zdjęcie, opis, skytechmusic.com, miniatura wideo YouTube (link, bez osadzania).
+10. Plan wieczoru.
+11. Informacje i bilety: karta biletowa (na telefonie przed listą informacji), dane praktyczne, regulamin, oświadczenie opiekuna.
+12. FAQ: 12 pytań w kolejności z briefu i „Pozostałe pytania” z FAQ organizatora.
+13. Media i akredytacje (przycisk „Złóż wniosek o akredytację”) oraz kontakt w sprawie partnerstwa.
+14. Końcowe CTA i stopka (role podmiotów, dane organizatora, linki prawne, kanały oficjalne).
 
 **Usunięte lub zablokowane, bo były niezgodne z briefem:**
 - „Pierwsze headline show Padre Guilherme w Polsce!” (hero, sekcja show, karta partnerstwa) i plakat z tym hasłem.
@@ -113,7 +113,7 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 | Integracja | Stan | Uwagi |
 |------------|------|-------|
 | eBilet (link do wydarzenia) | ❌ niegotowe | brak adresu, punkt podłączenia: `ticketUrl` |
-| Press Accreditations | ❌ niegotowe | adres zwracał błąd TLS i 404; przycisk ukryty; `accreditationReady` |
+| Press Accreditations | ⚠️ przycisk włączony | adres potwierdzony (www.pressaccreditations.com/pl/live2listen/padreguilherme); 11.10.2026 strona zwracała błąd certyfikatu TLS i HTTP 404, musi działać przed publikacją |
 | Press pack | ❌ brak pliku | przycisk pojawi się z `pressPackUrl` |
 | Newsletter | ❌ brak backendu | formularz gotowy i przetestowany na symulowanym serwerze (sukces tylko przy 2xx) |
 | GA4 / GTM / Meta Pixel | ⏸ gotowe do podłączenia | brak ID; Consent Mode v2, ładowanie po zgodzie, zdarzenia: [ANALITYKA.md](ANALITYKA.md) |
@@ -125,20 +125,19 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 
 1. Link do wydarzenia w eBilet.
 2. Hosting i poczta dla padreguilherme.pl (rekordy A i MX) albo inna domena i adresy kontaktowe.
-3. Działający adres formularza akredytacyjnego.
+3. Uruchomiona strona formularza akredytacyjnego pod potwierdzonym adresem (dziś: błąd certyfikatu i 404).
 4. Zatwierdzony press pack.
 5. Potwierdzone kategorie i ceny biletów, informacja o miejscach siedzących i VIP.
 6. Potwierdzenie harmonogramu i nazwa supportu o 19:00.
-7. **Zdjęcia z polskich koncertów** (Chorzów, ING Silesia Beats, 12.06.2026; Gdańsk, ERGO Arena, 15.08.2026; Opole, Itaka Arena, 4.09.2026) z prawami do publikacji oraz decyzja managementu, czy publikować sekcję „Polska już go zna”. Uwaga: wcześniej padła instrukcja „Nie piszemy o innych miastach w Polsce”, a brief prosi o tę sekcję. Komponent jest gotowy i włącza się jednym ustawieniem.
-8. Nowa wersja plakatu bez hasła „Pierwsze headline show” (obecny plakat nie jest używany).
-9. Miejsca, daty i autorzy zdjęć w galerii.
-10. Identyfikatory GTM/GA4/Meta i polityka prywatności dla tej domeny (administrator danych).
-11. Oficjalne linki do muzyki Skytecha (Spotify, YouTube), jeśli mają być na stronie.
-12. Wskazówki dojazdu i parkingu, kontakt w sprawie dostępności.
+7. Nowa wersja plakatu bez hasła „Pierwsze headline show” (obecny plakat nie jest używany).
+8. Miejsca, daty i autorzy zdjęć w galerii.
+9. Identyfikatory GTM/GA4/Meta i polityka prywatności dla tej domeny (administrator danych).
+10. Oficjalne linki do muzyki Skytecha (Spotify, YouTube), jeśli mają być na stronie.
+11. Wskazówki dojazdu i parkingu, kontakt w sprawie dostępności.
 
 ## H. Testy
 
-**Automatyczne: `npm test` — 94/94 zaliczone** (Playwright, Chromium 141):
+**Automatyczne: `npm test` — 97/97 zaliczone** (Playwright, Chromium 141):
 - produkcyjny HTML: brak zakazanych sformułowań, brak notatek podglądu, brak linku do strony głównej eBilet, poprawne title, description, canonical, OG, JSON-LD;
 - desktop 1440: jeden H1, hierarchia nagłówków, 8 przycisków „Kup bilet” o jednej nazwie (+ link w stopce), brak poziomego przewijania, brak błędów w konsoli, wszystkie obrazy z `alt`;
 - lightbox: otwieranie, fokus, strzałki, zapętlenie, pułapka fokusu, ESC, powrót fokusu; gest przesunięcia na telefonie;
@@ -170,11 +169,16 @@ W `docs/screenshots/`:
 - **Przed:** `przed-desktop-hero.jpg`, `przed-desktop-calosc.jpg`, `przed-mobile-hero.jpg`, `przed-mobile-calosc.jpg` (statyczny render kanwy v1 z tymi samymi zdjęciami).
 - **Po, komputer:** `po-desktop-hero`, `-tiktok`, `-djmag`, `-bio`, `-galeria`, `-lightbox`, `-love`, `-skytech`, `-bilety`, `-faq`, `-media`, `-stopka`.
 - **Po, telefon:** `po-mobile-hero`, `-menu`, `-sticky`, `-tiktok`, `-galeria`, `-lightbox`, `-bilety`, `-final`.
-- **Podgląd z notatkami:** `podglad-desktop-notatki`, `podglad-desktop-bilety-notatki`, `podglad-desktop-polska`.
+- **Podgląd z notatkami:** `podglad-desktop-notatki`, `podglad-desktop-bilety-notatki`.
 
 ## J. Status
 
 **BLOCKED** do publikacji: brak linku eBilet oraz brak hostingu i poczty dla padreguilherme.pl.
-**NEEDS APPROVAL:** treści i decyzje z sekcji G (plakat, sekcja „Polska”, harmonogram, kategorie biletów, role partnerów).
+**NEEDS APPROVAL:** treści i decyzje z sekcji G (plakat, harmonogram, kategorie biletów, role partnerów) oraz działający formularz akredytacyjny.
 
 Po dostarczeniu punktów 1–2 z sekcji G i akceptacji treści: `npm run html`, `npm test`, Lighthouse na docelowym serwerze. Wtedy strona może dostać status READY.
+
+## Zmiany po uwagach zespołu (11.10.2026)
+
+- Sekcja „Polska już go zna. Teraz czas na Łódź.” usunięta w całości (szablon, style, konfiguracja, notatki). Karta TikToka z „Pan jest pasterzem moim” ma podpis „Polska”, bez nazw innych miast.
+- Akredytacje: przycisk „Złóż wniosek o akredytację” włączony z adresem www.pressaccreditations.com/pl/live2listen/padreguilherme (wpisany także w HTML, działa bez JavaScriptu).

@@ -161,15 +161,18 @@ if (config.ticketUrl) {
   html = html.replace(/\sdata-ticket-ready([ >])/g, ' data-ticket-ready hidden$1');
 }
 
+// Akredytacje: przycisk wpisany do HTML (działa także bez JavaScriptu).
+if (config.accreditationReady && config.accreditationUrl) {
+  html = html.replace('<a class="btn btn--primary" href="#media" data-accreditation hidden>', `<a class="btn btn--primary" href="${esc(config.accreditationUrl)}" target="_blank" rel="noopener" data-accreditation>`);
+  html = html.replace(/<p class="media__pending reveal" data-accreditation-pending>[\s\S]*?<\/p>\s*/, '');
+}
+
 if (PREVIEW) {
   html = html.replace('<html lang="pl">', '<html lang="pl" class="is-preview">');
-  html = html.replace(/(data-section="poland")\s+hidden/, '$1');
 } else {
   // Produkcja: bez notatek podglądu i bez niepotwierdzonych elementów.
   html = html.replace(/<(p|div)\b[^>]*\bclass="[^"]*\bpreview-note\b[^"]*"[^>]*>[\s\S]*?<\/\1>\s*/g, '');
   html = html.replace(/<(ul|div)\b[^>]*\sdata-unconfirmed\b[^>]*>[\s\S]*?<\/\1>\s*/g, '');
-  if (!config.sections.poland) html = html.replace(/<!-- POLSKA[\s\S]*?<\/section>\s*/, '');
-  else html = html.replace(/(data-section="poland")\s+hidden/, '$1');
 }
 
 // Wersjonowanie CSS i JS (bezpieczny długi cache na serwerze).

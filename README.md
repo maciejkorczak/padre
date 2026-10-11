@@ -44,11 +44,10 @@ Wszystko w `assets/js/config.js`, potem `npm run html`:
 | Ustawienie | Efekt |
 |------------|-------|
 | `ticketUrl` | Wszystkie przyciski „Kup bilet” prowadzą do wydarzenia w eBilet (nowa karta, z UTM). Bez tego prowadzą do sekcji #bilety. |
-| `accreditationUrl` + `accreditationReady: true` | Pokazuje przycisk „Złóż wniosek o akredytację”. |
+| `accreditationUrl` + `accreditationReady` | Przycisk „Złóż wniosek o akredytację” (obecnie włączony; `false` go ukrywa). |
 | `pressPackUrl` | Pokazuje przycisk „Pobierz press pack”. |
 | `newsletterEndpoint` | Pokazuje formularz „Bądź na bieżąco” (POST JSON `{ email, consent, source, campaign }`; sukces tylko przy odpowiedzi 2xx). |
 | `gtmId` albo `ga4Id`, `metaPixelId` | Włącza baner zgody i ładuje narzędzia dopiero po zgodzie. |
-| `sections.poland` | Publikuje sekcję „Polska już go zna” (wymaga zatwierdzonych zdjęć). |
 
 ## Wdrożenie
 

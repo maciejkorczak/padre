@@ -13,7 +13,7 @@ export const TIKTOK = [
   { id: '7648704413720202529', img: 'tiktok-tuluza', place: '„Alors en Danse”', where: 'Tuluza, Francja', views: 17.9, alt: 'Kadr z nagrania: Padre Guilherme w klubie w Tuluzie' },
   { id: '7517012418174766358', img: 'tiktok-paryz', place: 'La Clairière', where: 'Paryż, Francja', views: 16.7, alt: 'Kadr z nagrania: uśmiechnięty Padre Guilherme w La Clairière w Paryżu' },
   { id: '7672463394183630113', img: 'tiktok-untold', place: 'UNTOLD', where: 'Rumunia', views: 12.5, alt: 'Kadr z nagrania: Padre Guilherme za konsoletą na festiwalu UNTOLD' },
-  { id: '7650860801443499297', img: 'tiktok-polska', place: '„Pan jest pasterzem moim”', where: 'ING Silesia Beats, Chorzów', views: 12.4, alt: 'Kadr z nagrania: publiczność pod sceną podczas występu Padre Guilherme na ING Silesia Beats w Chorzowie', highlight: true },
+  { id: '7650860801443499297', img: 'tiktok-polska', place: '„Pan jest pasterzem moim”', where: 'Polska', views: 12.4, alt: 'Kadr z nagrania: publiczność pod sceną podczas koncertu Padre Guilherme w Polsce', highlight: true },
   { id: '7571876780286479649', img: 'tiktok-koszyce', place: 'Koszyce', where: 'Słowacja', views: 10.5, alt: 'Kadr z nagrania: scena przed oświetloną katedrą w Koszycach' },
 ];
 

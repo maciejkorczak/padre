@@ -86,7 +86,8 @@ check('Canonical, OG, Twitter, robots', ['rel="canonical"', 'property="og:image"
 const ld = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
 check('JSON-LD MusicEvent (startDate, location, performer, organizer)', ld['@type'] === 'MusicEvent' && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 2 && ld.organizer?.name === 'Live2Listen');
 check('JSON-LD bez niepotwierdzonych cen i dostępności', !JSON.stringify(ld).match(/price|availability/i));
-check('Sekcja „Polska” nieopublikowana (brak zatwierdzonych zdjęć)', !html.includes('id="polska"'));
+check('Brak sekcji „Polska już go zna” (usunięta decyzją zespołu)', !/Polska już go zna|id="polska"/.test(html));
+check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includes('href="https://www.pressaccreditations.com/pl/live2listen/padreguilherme" target="_blank" rel="noopener" data-accreditation>'));
 
 /* ===== 2. Desktop ===== */
 {
@@ -161,6 +162,8 @@ check('Sekcja „Polska” nieopublikowana (brak zatwierdzonych zdjęć)', !html
   check('Pomiar: click_buy_ticket z lokalizacją CTA', ev2.some((e) => e.event === 'click_buy_ticket' && e.cta_location === 'hero' && e.device_type === 'desktop'));
   check('Pomiar: click_media (TikTok)', ev2.some((e) => e.event === 'click_media' && /tiktok/.test(e.media_id)));
   check('Pomiar: kliknięcie CTA nie jest raportowane jako zakup', !ev2.some((e) => /purchase/i.test(e.event)));
+  check('Akredytacje: przycisk „Złóż wniosek o akredytację” widoczny', await page.locator('[data-accreditation]').isVisible() && !(await page.locator('[data-accreditation-pending]').count()));
+  check('Press pack: brak przycisku bez zatwierdzonego pliku', !(await page.locator('[data-presskit]').isVisible()));
   check('Brak trackerów bez konfiguracji', trackerHits.length === 0 && !(await page.locator('[data-consent]').isVisible()));
   // Klawiatura (świeże załadowanie strony)
   await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });

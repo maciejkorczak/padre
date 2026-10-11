@@ -359,22 +359,6 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 .expander__inner > :last-child { margin-bottom: 22px; }
 .no-anim .expander__panel, .no-anim .acc__panel { transition: none; }
 
-/* ==== Polska ==== */
-.poland__grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.poland__item--big { grid-column: 1 / -1; }
-.poland__item figure { margin: 0; }
-.poland__photo { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; padding: 16px; border: 1px dashed var(--line-2); border-radius: var(--radius); color: var(--fg-3); font-size: 0.8125rem; text-align: center; background: var(--bg-2); }
-.poland__item figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-family: var(--f-display); font-size: 0.8125rem; letter-spacing: 0.14em; text-transform: uppercase; }
-.poland__city { color: var(--fg); font-weight: 600; }
-.poland__event { color: var(--fg-3); }
-.poland__year { color: var(--accent); }
-@media (min-width: 960px) {
-  .poland__grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: auto auto; }
-  .poland__item--big { grid-column: 1; grid-row: 1 / span 2; }
-  .poland__item--big figure { height: 100%; display: flex; flex-direction: column; }
-  .poland__item--big .poland__photo { aspect-ratio: auto; flex: 1; min-height: 360px; }
-}
-
 /* ==== Galeria edytorska ==== */
 .gallery__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .gallery__item { min-width: 0; }
@@ -627,7 +611,6 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 .note-box::before { content: 'Do potwierdzenia · '; font-weight: 800; letter-spacing: 0.04em; }
 .preview-bar { position: relative; z-index: 60; padding: 10px var(--gutter); background: var(--warn); color: #241A00; font-size: 0.8125rem; line-height: 1.45; text-align: center; }
 .is-preview .preview-bar { display: block; }
-.is-preview .poland .note-box { margin: 0 0 32px; }
 
 /* ==== Ograniczony ruch ==== */
 @media (prefers-reduced-motion: reduce) {

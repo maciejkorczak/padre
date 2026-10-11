@@ -13,10 +13,11 @@ window.PADRE_CONFIG = {
   // Dopisuje utm_* z adresu strony do linku eBilet (atrybucja kampanii po stronie sprzedawcy).
   passUtmToTicketUrl: true,
 
-  // Press Accreditations (Live2Listen). 11.10.2026 adres zwracał błąd certyfikatu TLS i HTTP 404,
-  // dlatego przycisk jest wyłączony. Po potwierdzeniu działania ustaw accreditationReady: true.
+  // Press Accreditations (Live2Listen) — adres potwierdzony przez zespół projektu.
+  // 11.10.2026 strona jeszcze nie działała (certyfikat TLS nie pasuje do domeny, HTTP 404):
+  // przed publikacją sprawdź, czy formularz jest dostępny. accreditationReady: false ukrywa przycisk.
   accreditationUrl: 'https://www.pressaccreditations.com/pl/live2listen/padreguilherme',
-  accreditationReady: false,
+  accreditationReady: true,
 
   // Zatwierdzony press pack (PDF lub folder). Przycisk pojawi się dopiero po wpisaniu adresu.
   pressPackUrl: '',
@@ -31,13 +32,6 @@ window.PADRE_CONFIG = {
   ga4Id: '',
   metaPixelId: '',
   privacyPolicyUrl: 'https://www.live2listen.com/prywatnosc',
-
-  // Sekcje wymagające akceptacji.
-  sections: {
-    // „Polska już go zna” — gotowy komponent; wyłączony, dopóki nie ma zatwierdzonych zdjęć
-    // z polskich koncertów (wymóg briefu) i decyzji managementu (wcześniej: „skupiamy się na Łodzi”).
-    poland: false
-  },
 
   // Odliczanie do otwarcia bram (godzina do potwierdzenia przez organizatora).
   countdownTarget: '2027-02-14T18:00:00+01:00'
