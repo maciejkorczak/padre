@@ -42,33 +42,29 @@ export const POSTERS = [
   { img: 'plakat-10', title: 'Dreamfields', where: 'Meksyk', href: 'https://www.nmas.com.mx/puebla/entretenimiento/musica-conciertos/dreamfields-mexico-2025-puebla-con-steve-aoki-y-charlotte-de-witte-line-up-sabado-15-y-domingo-16-noviembre/', alt: 'Plakat: Padre Guilherme na festiwalu Dreamfields w Meksyku' },
 ];
 
-const OSWIADCZENIE = { href: 'assets/docs/oswiadczenie-opiekuna-maloletniego.pdf', label: 'Oświadczenie opiekuna małoletniego (PDF)' };
-const REGULAMIN = { href: 'assets/docs/regulamin-live2listen.pdf', label: 'Regulamin wydarzeń Live2Listen (PDF)' };
+const REGULAMIN = { href: 'https://www.live2listen.com/regulamin', label: 'Regulamin wydarzeń Live2Listen' };
+const FORMULARZ = { href: 'https://www.live2listen.com/#kontakt', label: 'Formularz kontaktowy Live2Listen' };
 const ODSPRZEDAZ = 'Bilety na wydarzenia Live2Listen nie podlegają standardowemu zwrotowi, z wyjątkiem przypadków przewidzianych w przepisach prawa lub regulaminie sprzedaży. Jeśli nie możesz przyjść, skorzystaj z oficjalnej odsprzedaży w aplikacji eBilet — będzie dostępna najpóźniej tydzień przed koncertem.';
 
 // Pytania w kolejności z briefu. Pytania o miejsca siedzące i bilety VIP dodamy,
 // gdy organizator potwierdzi odpowiedzi (nie publikujemy pustych odpowiedzi).
 export const FAQ_MAIN = [
-  { q: 'Gdzie kupić bilety?', a: ['Oficjalna sprzedaż biletów prowadzona jest wyłącznie w serwisie eBilet. Kupuj tylko tam: bilety z innych źródeł mogą okazać się nieważne, a bilet nabyty z naruszeniem regulaminu może zostać unieważniony przez organizatora.'], ticket: true },
+  { q: 'Gdzie kupić bilety?', a: ['Bilety można zakupić wyłącznie, korzystając z linków zawartych na tej stronie. Bilety zakupione z innych źródeł mogą okazać się nieważne, a bilet nabyty z naruszeniem regulaminu może zostać unieważniony przez organizatora.'], ticket: true },
   { q: 'Kiedy i gdzie odbędzie się koncert?', a: ['W niedzielę 14 lutego 2027 roku w Atlas Arenie w Łodzi, al. Bandurskiego 7.'] },
-  { q: 'O której godzinie rozpocznie się wydarzenie?', a: ['Planowany harmonogram: 18:00 otwarcie bram, 19:00 support, 20:00 Skytech, 21:00 Padre Guilherme.', 'Godziny otwarcia bram i rozpoczęcia koncertu znajdziesz też na bilecie. Dzień przed koncertem sprawdź aktualne informacje na tej stronie. Przyjdź wcześniej, żeby uniknąć kolejek przy wejściu.'] },
+  { q: 'O której godzinie rozpocznie się wydarzenie?', a: ['Harmonogram wydarzenia zostanie opublikowany i przesłany do nabywców biletów na kilka dni przed wydarzeniem.'] },
   { q: 'Jak dojechać do Atlas Areny?', a: ['Atlas Arena znajduje się przy al. Bandurskiego 7 w Łodzi. Organizator zachęca do korzystania z komunikacji miejskiej lub taxi — oszczędzisz czas na szukaniu miejsca parkingowego.'], links: [{ href: 'https://atlasarena.pl', label: 'Dojazd i parkingi: atlasarena.pl', external: true }] },
   { q: 'Czy osoby niepełnoletnie mogą uczestniczyć?', a: [
     'Tak. Osoby, które ukończyły 16 lat, mogą wejść samodzielnie z ważnym biletem i dokumentem potwierdzającym wiek. Brak dokumentu oznacza odmowę wstępu bez opiekuna.',
     'Osoby poniżej 16 lat mogą uczestniczyć w koncercie wyłącznie pod opieką osoby dorosłej i na jej odpowiedzialność. Bilet jest potrzebny zarówno dla dziecka, jak i dla opiekuna, a opiekun musi mieć wypełnione oświadczenie opiekuna małoletniego. Jedna osoba dorosła może być opiekunem maksymalnie pięciorga niepełnoletnich.',
-    'Dzieci, które w dniu koncertu nie mają ukończonych 3 lat, wchodzą bezpłatnie. Zabierz dokument potwierdzający ich wiek i słuchawki ochronne.'], links: [OSWIADCZENIE, REGULAMIN] },
+    'Dzieci, które w dniu koncertu nie mają ukończonych 3 lat, wchodzą bezpłatnie. Zabierz dokument potwierdzający ich wiek i słuchawki ochronne.'], links: [REGULAMIN] },
   { q: 'Jak wygląda dostępność dla osób z niepełnosprawnościami?', a: [
     'Jeśli osoba z niepełnosprawnością przychodzi z opiekunem, bilet potrzebny jest dla każdej z tych osób.',
     'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet — obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'] },
   { q: 'Czy bilety można przekazać innej osobie?', a: ['Tak, bilet możesz przekazać innej osobie w aplikacji eBilet.', ODSPRZEDAZ] },
   { q: 'Jak skontaktować się z organizatorem?', a: [
-    'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). W sprawach zakupu biletu, braku biletu w e-mailu lub kodu QR kontaktuj się z eBilet.'], contacts: [
-    { label: 'Organizator', email: 'hello@live2listen.com' },
-    { label: 'Rzeczy zgubione na koncercie', email: 'lost@live2listen.com' },
-    { label: 'Media', email: 'media@padreguilherme.pl' },
-    { label: 'Partnerstwo', email: 'info@padreguilherme.pl' }] },
+    'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). Napisz przez formularz kontaktowy na stronie Live2Listen. W sprawach zakupu biletu, braku biletu w e-mailu lub kodu kreskowego kontaktuj się z eBilet.'], contacts: [
+    { label: 'Media', email: 'kinga@live2listen.com' }], links: [FORMULARZ] },
   { q: 'Co w przypadku zmiany terminu?', a: ['Jeśli koncert zostanie przeniesiony na inny termin lub do innego obiektu, kupione bilety zachowują ważność i nie trzeba ich wymieniać. O zmianie poinformuje Cię e-mailem dystrybutor biletów, a organizator opublikuje informację w swoich kanałach i na tej stronie.'] },
-  { q: 'Co w przypadku odwołania wydarzenia?', a: ['Jeśli wydarzenie zostanie odwołane, przysługuje Ci zwrot pieniędzy za bilet. Skontaktuj się z dystrybutorem biletów, czyli z eBilet.'] },
 ];
 
 // Pozostałe pytania z FAQ organizatora (zachowane z poprzedniej wersji strony).
@@ -76,7 +72,7 @@ export const FAQ_MORE = [
   { q: 'Co muszę mieć ze sobą, aby wejść na koncert?', a: ['Bilet i dokument tożsamości.'] },
   { q: 'Czy bilet elektroniczny trzeba wydrukować?', a: ['Nie. Na wejściu pokażesz bilet elektroniczny, np. na smartfonie. Zdjęcia i zrzuty ekranu biletów nie są akceptowane.'] },
   { q: 'Kupiłem/-am kilka biletów na swoje nazwisko. Czy pozostałe osoby wejdą bez problemu?', a: ['Tak, o ile ich bilety nie zostaną wcześniej zeskanowane. Najlepiej wchodźcie razem. Każdy bilet ma unikalny kod uprawniający do jednorazowego wejścia.'] },
-  { q: 'Kupiłem/-am bilet, ale nie dostałem/-am go e-mailem albo nie ma na nim kodu QR. Co robić?', a: ['Płatność mogła jeszcze nie zostać zaksięgowana. Jeśli po 24 godzinach (dniu roboczym) nadal nie masz biletu albo bilet nie ma kodu QR, skontaktuj się z obsługą klienta eBilet. Sprawdź też, czy adres e-mail przy zakupie nie zawierał literówki.'] },
+  { q: 'Kupiłem/-am bilet, ale nie dostałem/-am go e-mailem albo nie ma na nim kodu kreskowego. Co robić?', a: ['Płatność mogła jeszcze nie zostać zaksięgowana. Jeśli po 24 godzinach (dniu roboczym) nadal nie masz biletu albo bilet nie ma kodu kreskowego, skontaktuj się z obsługą klienta eBilet. Sprawdź też, czy adres e-mail przy zakupie nie zawierał literówki.'] },
   { q: 'Jakich przedmiotów nie można wnosić?', a: ['Na teren imprezy nie wolno wnosić m.in.:'], list: [
     'kamer i sprzętu nagrywającego audio i wideo',
     'profesjonalnego sprzętu fotograficznego, w tym aparatów z wymienną optyką i zoomem optycznym powyżej 6x',
@@ -90,7 +86,6 @@ export const FAQ_MORE = [
     'alkoholu i środków odurzających'], links: [REGULAMIN] },
   { q: 'Czy mogę robić zdjęcia i nagrywać filmy?', a: ['Tak, wyłącznie do użytku prywatnego i telefonem lub aparatem bez profesjonalnych funkcji. Organizator może wprowadzić dodatkowe zasady — poinformuje o nich na tej stronie.'] },
   { q: 'Czy mogę wyjść i wrócić?', a: ['Nie. Ponowne wejście po opuszczeniu terenu imprezy wymaga nowego biletu.'] },
-  { q: 'Czy będzie szatnia?', a: ['Zasady szatni zależą od obiektu, a przechowanie odzieży wierzchniej jest płatne. Sprawdź informacje na stronie Atlas Areny.'] },
+  { q: 'Czy będzie szatnia?', a: ['Informacje o szatni znajdziesz na stronie Atlas Areny. Przechowanie odzieży wierzchniej jest płatne.'] },
   { q: 'Czy mogę przyjść ze zwierzęciem?', a: ['Nie. Ze względów bezpieczeństwa na wydarzenia Live2Listen nie można wprowadzać zwierząt.'] },
-  { q: 'Zgubiłem/-am coś na koncercie. Jak to odzyskać?', a: ['Napisz na adres lost@live2listen.com i dokładnie opisz zgubioną rzecz. Organizator odezwie się, gdy ją odnajdzie.'] },
 ];

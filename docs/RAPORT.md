@@ -1,19 +1,18 @@
 # Raport: audyt i wdrożenie landing page Padre Guilherme
 
-Atlas Arena, Łódź, 14.02.2027. Stan na 11.10.2026.
+Atlas Arena, Łódź, 14.02.2027. Stan na 18.10.2026 (po poprawkach Marka).
 
 - Podgląd strony: https://claude.ai/artifact/MaMj6ZkCbBELkMe9iNnrDC
 - Kopia bezpieczeństwa poprzedniej wersji: `design/canvas-v1/` (osobny commit przed zmianami).
 - Nic nie zostało opublikowane na produkcji.
 
-## Status: **BLOCKED** (do publikacji), **NEEDS APPROVAL** (treści)
+## Status: **NEEDS APPROVAL**
 
-Kod jest gotowy i przetestowany, ale strona nie może jeszcze wyjść na produkcję:
+Po poprawkach z 18.10 przyciski „Kup bilet” prowadzą bezpośrednio do wydarzenia w eBilet, a strona nie używa już adresów @padreguilherme.pl. Przed publikacją pod docelową domeną zostają:
 
-1. **Brak linku do wydarzenia w eBilet.** Przyciski „Kup bilet” prowadzą na razie do sekcji biletów z komunikatem. Wpisanie linku w `config.js` przełącza wszystkie przyciski naraz.
-2. **Domena padreguilherme.pl nie ma hostingu (brak rekordu A) ani poczty (brak rekordu MX).** Adresy info@ i media@ podane na stronie nie odbiorą wiadomości, dopóki skrzynki nie zostaną skonfigurowane.
-3. Treści wymagające decyzji managementu: plakat z hasłem „Pierwsze headline show”, harmonogram, kategorie biletów.
-4. Strona formularza akredytacyjnego (adres potwierdzony) 11.10.2026 jeszcze nie działała: certyfikat TLS nie pasuje do domeny, HTTP 404.
+1. **Domena padreguilherme.pl nie ma rekordu A.** Canonical, Open Graph i sitemap wskazują na tę domenę. Jeśli strona ma działać pod innym adresem, trzeba go wpisać w tych miejscach.
+2. **Formularz akredytacyjny** (adres potwierdzony) 11 i 18.10 nie działał: certyfikat TLS nie pasuje do domeny, HTTP 404. Przycisk jest włączony.
+3. Treści czekające na decyzję: plakat, support (sekcja ukryta), harmonogram (sekcja ukryta), kategorie biletów.
 
 Pełna lista: [DO-POTWIERDZENIA.md](DO-POTWIERDZENIA.md).
 
@@ -111,7 +110,7 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 
 | Integracja | Stan | Uwagi |
 |------------|------|-------|
-| eBilet (link do wydarzenia) | ❌ niegotowe | brak adresu, punkt podłączenia: `ticketUrl` |
+| eBilet (link do wydarzenia) | ✅ działa | https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme, wszystkie przyciski „Kup bilet” (+ UTM) |
 | Press Accreditations | ⚠️ przycisk włączony | adres potwierdzony (www.pressaccreditations.com/pl/live2listen/padreguilherme); 11.10.2026 strona zwracała błąd certyfikatu TLS i HTTP 404, musi działać przed publikacją |
 | Press pack | ❌ brak pliku | przycisk pojawi się z `pressPackUrl` |
 | Newsletter | ❌ brak backendu | formularz gotowy i przetestowany na symulowanym serwerze (sukces tylko przy 2xx) |
@@ -122,21 +121,20 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 
 ## G. Brakujące materiały
 
-1. Link do wydarzenia w eBilet.
-2. Hosting i poczta dla padreguilherme.pl (rekordy A i MX) albo inna domena i adresy kontaktowe.
-3. Uruchomiona strona formularza akredytacyjnego pod potwierdzonym adresem (dziś: błąd certyfikatu i 404).
-4. Zatwierdzony press pack.
-5. Potwierdzone kategorie i ceny biletów, informacja o miejscach siedzących i VIP.
-6. Potwierdzenie harmonogramu i nazwa supportu o 19:00.
-7. Nowa wersja plakatu bez hasła „Pierwsze headline show” (obecny plakat nie jest używany).
-8. Miejsca, daty i autorzy zdjęć w galerii.
-9. Identyfikatory GTM/GA4/Meta i polityka prywatności dla tej domeny (administrator danych).
-10. Oficjalne linki do muzyki Skytecha (Spotify, YouTube), jeśli mają być na stronie.
-11. Wskazówki dojazdu i parkingu, kontakt w sprawie dostępności.
+1. Hosting dla padreguilherme.pl (rekord A) albo docelowy adres strony.
+2. Uruchomiona strona formularza akredytacyjnego pod potwierdzonym adresem (dziś: błąd certyfikatu i 404).
+3. Zatwierdzony press pack.
+4. Potwierdzone kategorie i ceny biletów, informacja o miejscach siedzących i VIP.
+5. Ogłoszenie supportu i publikacja harmonogramu (sekcje ukryte do tego czasu).
+6. Nowa wersja plakatu bez hasła „Pierwsze headline show” (obecny plakat nie jest używany).
+7. Miejsca, daty i autorzy zdjęć w galerii.
+8. Identyfikatory GTM/GA4/Meta i polityka prywatności dla tej domeny (administrator danych).
+9. Oficjalne linki do muzyki Skytecha (Spotify, YouTube), jeśli mają być na stronie.
+10. Wskazówki dojazdu i parkingu, kontakt w sprawie dostępności.
 
 ## H. Testy
 
-**Automatyczne: `npm test` — 98/98 zaliczone** (Playwright, Chromium 141):
+**Automatyczne: `npm test` — 106/106 zaliczone** (Playwright, Chromium 141):
 - produkcyjny HTML: brak zakazanych sformułowań, brak notatek podglądu, brak linku do strony głównej eBilet, poprawne title, description, canonical, OG, JSON-LD;
 - desktop 1440: jeden H1, hierarchia nagłówków, 8 przycisków „Kup bilet” o jednej nazwie (+ link w stopce), brak poziomego przewijania, brak błędów w konsoli, wszystkie obrazy z `alt`;
 - lightbox: otwieranie, fokus, strzałki, zapętlenie, pułapka fokusu, ESC, powrót fokusu; gest przesunięcia na telefonie;
@@ -171,8 +169,8 @@ W `docs/screenshots/`:
 
 ## J. Status
 
-**BLOCKED** do publikacji: brak linku eBilet oraz brak hostingu i poczty dla padreguilherme.pl.
-**NEEDS APPROVAL:** treści i decyzje z sekcji G (plakat, harmonogram, kategorie biletów, role partnerów) oraz działający formularz akredytacyjny.
+**NEEDS APPROVAL**: link eBilet i kontakty są gotowe; zostają domena padreguilherme.pl i działający formularz akredytacyjny.
+Treści i decyzje z sekcji G: plakat, support, harmonogram, kategorie biletów, role partnerów.
 
 Po dostarczeniu punktów 1–2 z sekcji G i akceptacji treści: `npm run html`, `npm test`, Lighthouse na docelowym serwerze. Wtedy strona może dostać status READY.
 
@@ -181,3 +179,18 @@ Po dostarczeniu punktów 1–2 z sekcji G i akceptacji treści: `npm run html`, 
 - Sekcja „Polska już go zna. Teraz czas na Łódź.” usunięta w całości (szablon, style, konfiguracja, notatki). Karta TikToka z „Pan jest pasterzem moim” ma podpis „Polska”, bez nazw innych miast.
 - Akredytacje: przycisk „Złóż wniosek o akredytację” włączony z adresem www.pressaccreditations.com/pl/live2listen/padreguilherme (wpisany także w HTML, działa bez JavaScriptu).
 - Usunięte wszystkie notatki „Do potwierdzenia” ze strony (także z podglądu), lista kategorii biletów „do potwierdzenia” i dwa pytania FAQ bez potwierdzonych odpowiedzi (miejsca siedzące, VIP). Otwarte kwestie są tylko w `docs/DO-POTWIERDZENIA.md`.
+
+## Poprawki Marka (18.10.2026)
+
+Na podstawie PDF z uwagami (wydruk thelastdaynight.thebooking.eu z 12.10.2026):
+
+- **Bilety:** wszystkie przyciski „Kup bilet” prowadzą bezpośrednio do strony wydarzenia w eBilet; w karcie biletowej przycisk zamiast komunikatu; w końcowym CTA „Bilety już w sprzedaży.”
+- **Pasek informacji:** usunięte „Bramy 18:00” i „Bilety: eBilet”; odliczanie „Do wydarzenia pozostało” pokazuje tylko dni (pełne dni kalendarzowe, czas polski).
+- **Godziny:** usunięte z paska, z informacji i z FAQ; FAQ: „Harmonogram wydarzenia zostanie opublikowany i przesłany do nabywców biletów na kilka dni przed wydarzeniem.”
+- **Ukryte do ogłoszenia:** sekcja Skytech (support) i sekcja „Plan wieczoru” wraz z linkiem „Plan” w menu. Włączenie: `supportAnnounced` / `scheduleAnnounced` w `config.js`.
+- **Usunięte teksty:** przypis o liczbie wyświetleń TikToka, „Kliknij zdjęcie…” w galerii, zdanie o godzinach na bilecie.
+- **Regulamin zamiast PDF:** wszystkie linki (Wstęp, Regulamin, FAQ, stopka) prowadzą do live2listen.com/regulamin. Pliki PDF usunięte z `assets/docs`, link „Oświadczenie opiekuna” usunięty ze stopki.
+- **Kontakt:** media → kinga@live2listen.com; partnerstwo, sponsoring i kontakt w stopce → formularz na stronie Live2Listen; usunięte hello@ i lost@.
+- **FAQ:** nowa odpowiedź „Gdzie kupić bilety?” (bilety wyłącznie przez linki na tej stronie), „kod kreskowy” zamiast „QR”, poprawiona odpowiedź o szatni, usunięte pytania o odwołanie wydarzenia i zgubione rzeczy.
+- **Stopka:** bez kolumny „Bilety”.
+- **Wydruk:** style do druku (PDF do recenzji bez nachodzącego nagłówka, bez pomarańczowego koła za „#79”, ze zdjęciem w hero).

@@ -85,9 +85,15 @@ check('Title zgodny z briefem', html.includes('<title>Padre Guilherme w Polsce 2
 check('Meta description zgodny z briefem', html.includes('content="Padre Guilherme wystąpi 14 lutego 2027 w Atlas Arenie w Łodzi. Sprawdź informacje o wydarzeniu i kup bilety na eBilet."'));
 check('Canonical, OG, Twitter, robots', ['rel="canonical"', 'property="og:image"', 'name="twitter:card"', 'name="robots"'].every((s) => html.includes(s)));
 const ld = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
-check('JSON-LD MusicEvent (startDate, location, performer, organizer)', ld['@type'] === 'MusicEvent' && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 2 && ld.organizer?.name === 'Live2Listen');
+check('JSON-LD MusicEvent (startDate, location, performer, organizer, offers.url)', ld['@type'] === 'MusicEvent' && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 1 && ld.organizer?.name === 'Live2Listen' && ld.offers?.url === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme');
 check('JSON-LD bez niepotwierdzonych cen i dostępności', !JSON.stringify(ld).match(/price|availability/i));
 check('Brak sekcji „Polska już go zna” (usunięta decyzją zespołu)', !/Polska już go zna|id="polska"/.test(html));
+check('Brak godzin wydarzenia na stronie', !/\b(18|19|20|21):00\b/.test(html));
+check('Sekcje „Skytech” i „Plan wieczoru” ukryte do czasu ogłoszenia', !/Skytech|Plan wieczoru|href="#plan"|data-support|data-schedule/.test(html));
+check('Linki do regulaminu prowadzą do strony Live2Listen (bez PDF)', !/\.pdf/.test(html) && (html.match(/href="https:\/\/www\.live2listen\.com\/regulamin"/g) || []).length >= 3);
+check('Kontakt: formularz L2L i kinga@live2listen.com, bez adresów @padreguilherme.pl', html.includes('https://www.live2listen.com/#kontakt') && html.includes('kinga@live2listen.com') && !/@padreguilherme\.pl|hello@live2listen|lost@live2listen/.test(html));
+check('FAQ: kod kreskowy zamiast QR, bez pytań o odwołanie i zgubione rzeczy', !/QR|odwołania wydarzenia|Zgubiłem/.test(html) && html.includes('kodu kreskowego'));
+check('Końcowe CTA: „Bilety już w sprzedaży.”', html.includes('Bilety już w sprzedaży.'));
 check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includes('href="https://www.pressaccreditations.com/pl/live2listen/padreguilherme" target="_blank" rel="noopener" data-accreditation>'));
 
 /* ===== 2. Desktop ===== */
@@ -95,6 +101,10 @@ check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includ
   const { ctx, page, log, trackerHits } = await open({ width: 1440, height: 900 });
   await page.waitForTimeout(1600);
   await shot(page, 'po-desktop-hero');
+  const cd = await page.evaluate(() => ({ visible: !document.querySelector('[data-countdown]').hidden, items: document.querySelectorAll('.countdown__grid li').length, label: document.querySelector('.countdown__label').textContent.trim(), days: +document.querySelector('[data-cd="d"]').textContent }));
+  const pl = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw' }).format(new Date()).split('-').map(Number);
+  const expectedDays = Math.round((Date.UTC(2027, 1, 14) - Date.UTC(pl[0], pl[1] - 1, pl[2])) / 864e5);
+  check('Odliczanie: „Do wydarzenia pozostało”, tylko dni', cd.visible && cd.items === 1 && cd.label === 'Do wydarzenia pozostało' && cd.days === expectedDays, `${cd.days} dni (oczekiwane ${expectedDays})`);
   const h1 = await page.locator('h1').count();
   check('Desktop: dokładnie jeden H1', h1 === 1, `H1: ${h1}`);
   const headings = await page.evaluate(() => [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter((h) => h.offsetParent || h.closest('details')).map((h) => +h.tagName[1]));
@@ -102,9 +112,10 @@ check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includ
   check('Desktop: hierarchia nagłówków bez przeskoków', skips.length === 0, headings.join(','));
   const tickets = await page.$$eval('[data-ticket]', (els) => els.map((a) => ({ loc: a.dataset.ticket, href: a.getAttribute('href'), text: a.textContent.trim() })));
   const locs = tickets.map((t) => t.loc);
-  check('CTA „Kup bilet” w: hero, menu, po bio, love, bilety, final, sticky, FAQ', ['hero', 'menu', 'bio', 'love', 'final', 'sticky', 'faq'].every((l) => locs.includes(l)), locs.join(', '));
-  check('Brak linku eBilet → wszystkie CTA prowadzą do #bilety (nie do strony głównej eBilet)', tickets.every((t) => t.href === '#bilety'));
-  check('Jednolita nazwa CTA', tickets.filter((t) => t.loc !== 'footer').every((t) => /^Kup bilet/i.test(t.text)), [...new Set(tickets.map((t) => t.text))].join(' | '));
+  check('CTA „Kup bilet” w: menu, hero, po bio, love, bilety, FAQ, final, sticky', ['hero', 'menu', 'bio', 'love', 'bilety', 'final', 'sticky', 'faq'].every((l) => locs.includes(l)), locs.join(', '));
+  check('Wszystkie CTA prowadzą bezpośrednio do wydarzenia w eBilet', tickets.every((t) => t.href === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme'), [...new Set(tickets.map((t) => t.href))].join(' | '));
+  check('Karta biletowa: przycisk zamiast komunikatu', await page.locator('#bilety [data-ticket="bilety"]').isVisible() && !(await page.locator('[data-ticket-pending]').isVisible()));
+  check('Jednolita nazwa CTA', tickets.every((t) => /^Kup bilet/i.test(t.text)), [...new Set(tickets.map((t) => t.text))].join(' | '));
   await scrollThrough(page);
   const ow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   check('Desktop: brak poziomego przewijania', ow <= 0, `nadmiar ${ow}px`);
@@ -172,7 +183,7 @@ check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includ
   check('Klawiatura: pierwszy Tab → „Przejdź do treści”', await page.evaluate(() => document.activeElement.classList.contains('skip-link')));
   await page.keyboard.press('Tab');
   check('Klawiatura: widoczny wskaźnik fokusu', await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle !== 'none'));
-  for (const [sel, name] of [['#wideo', 'po-desktop-tiktok'], ['#djmag', 'po-desktop-djmag'], ['#artysta', 'po-desktop-bio'], ['#love', 'po-desktop-love'], ['#support', 'po-desktop-skytech'], ['#bilety', 'po-desktop-bilety'], ['#media', 'po-desktop-media'], ['.footer', 'po-desktop-stopka']]) await shotSection(page, sel, name);
+  for (const [sel, name] of [['#wideo', 'po-desktop-tiktok'], ['#djmag', 'po-desktop-djmag'], ['#artysta', 'po-desktop-bio'], ['#love', 'po-desktop-love'], ['#bilety', 'po-desktop-bilety'], ['#media', 'po-desktop-media'], ['.footer', 'po-desktop-stopka']]) await shotSection(page, sel, name);
   check('Desktop: konsola bez błędów i ostrzeżeń', log.length === 0, log.join(' | '));
   await ctx.close();
 }

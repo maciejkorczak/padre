@@ -46,7 +46,7 @@
       <ul class="site-nav__list">
         <li><a href="#artysta">Artysta</a></li>
         <li><a href="#galeria">Galeria</a></li>
-        <li><a href="#plan">Plan</a></li>
+        <li data-schedule><a href="#plan">Plan</a></li>
         <li><a href="#bilety">Bilety</a></li>
         <li><a href="#faq">FAQ</a></li>
         <li><a href="#media">Media</a></li>
@@ -98,17 +98,12 @@
   <ul class="eventbar__list">
     <li><span class="eventbar__k">Kiedy</span><span class="eventbar__v">Niedziela, 14 lutego 2027</span></li>
     <li><span class="eventbar__k">Gdzie</span><span class="eventbar__v">Atlas Arena, Łódź</span></li>
-    <li><span class="eventbar__k">Bramy</span><span class="eventbar__v">18:00</span></li>
-    <li><span class="eventbar__k">Support</span><span class="eventbar__v">Skytech</span></li>
-    <li><span class="eventbar__k">Bilety</span><span class="eventbar__v">eBilet</span></li>
+    <li data-support><span class="eventbar__k">Support</span><span class="eventbar__v">Skytech</span></li>
   </ul>
   <div class="countdown" data-countdown hidden>
-    <p class="countdown__label" id="countdown-label">Do otwarcia bram</p>
+    <p class="countdown__label" id="countdown-label">Do wydarzenia pozostało</p>
     <ol class="countdown__grid" aria-labelledby="countdown-label">
       <li><span class="countdown__num" data-cd="d">000</span><span class="countdown__unit" data-cd-unit="d">dni</span></li>
-      <li><span class="countdown__num" data-cd="h">00</span><span class="countdown__unit">godz.</span></li>
-      <li><span class="countdown__num" data-cd="m">00</span><span class="countdown__unit">min</span></li>
-      <li><span class="countdown__num" data-cd="s">00</span><span class="countdown__unit">sek.</span></li>
     </ol>
   </div>
   </div>
@@ -134,7 +129,6 @@
       <button class="rail__btn" type="button" data-rail-next aria-label="Następne nagrania"><!--pg:icon-right--></button>
     </div>
   </div>
-  <p class="wrap note">Liczba wyświetleń każdego nagrania osobno, na TikToku, stan na 11 października 2026 r.</p>
 </section>
 
 <!-- DJ MAG -->
@@ -198,7 +192,6 @@
         <p class="kicker reveal">Na scenach świata</p>
         <h2 class="h2 reveal" id="gallery-title">Światło, tłum i muzyka</h2>
       </div>
-      <p class="section-head__aside reveal">Kliknij zdjęcie, żeby obejrzeć je w pełnym rozmiarze.</p>
     </div>
     <ul class="gallery__grid" data-gallery="festiwale">
       <!--pg:gallery-->
@@ -244,8 +237,8 @@
   </div>
 </section>
 
-<!-- SKYTECH -->
-<section class="section support" id="support" aria-labelledby="support-title">
+<!-- SKYTECH (data-support: widoczne po ogłoszeniu supportu) -->
+<section class="section support" id="support" data-support aria-labelledby="support-title">
   <div class="wrap support__grid">
     <figure class="support__photo reveal">
       <div class="frame">
@@ -273,8 +266,8 @@
   </div>
 </section>
 
-<!-- PLAN WIECZORU -->
-<section class="section plan" id="plan" aria-labelledby="plan-title">
+<!-- PLAN WIECZORU (data-schedule: widoczny po publikacji harmonogramu) -->
+<section class="section plan" id="plan" data-schedule aria-labelledby="plan-title">
   <div class="wrap plan__grid">
     <div class="plan__copy">
       <p class="kicker reveal">Niedziela, 14 lutego 2027</p>
@@ -285,7 +278,6 @@
         <li class="timeline__row reveal"><time class="timeline__time" datetime="2027-02-14T20:00+01:00">20:00</time><span class="timeline__what">Skytech</span></li>
         <li class="timeline__row timeline__row--main reveal"><time class="timeline__time" datetime="2027-02-14T21:00+01:00">21:00</time><span class="timeline__what">Padre Guilherme</span></li>
       </ol>
-      <p class="note reveal">Harmonogram może ulec zmianie. Aktualne godziny znajdziesz na bilecie i na tej stronie.</p>
     </div>
     <figure class="plan__photo reveal">
       <div class="frame" data-parallax-img>
@@ -319,11 +311,10 @@
       <dl class="info">
         <div class="info__row reveal"><dt>Data</dt><dd>Niedziela, 14 lutego 2027</dd></div>
         <div class="info__row reveal"><dt>Miejsce</dt><dd>Atlas Arena, al. Bandurskiego 7, 94-020 Łódź</dd></div>
-        <div class="info__row reveal"><dt>Godziny</dt><dd>Otwarcie bram 18:00, Padre Guilherme 21:00. <a href="#plan">Pełny plan wieczoru</a></dd></div>
-        <div class="info__row reveal"><dt>Wstęp</dt><dd>Od 16 lat samodzielnie, z dokumentem potwierdzającym wiek. Osoby poniżej 16 lat wyłącznie pod opieką dorosłego z wypełnionym oświadczeniem opiekuna. Dzieci do 3 lat wchodzą bezpłatnie.<br><a href="assets/docs/oswiadczenie-opiekuna-maloletniego.pdf" target="_blank" rel="noopener">Oświadczenie opiekuna małoletniego (PDF)</a></dd></div>
+        <div class="info__row reveal"><dt>Wstęp</dt><dd>Od 16 lat samodzielnie, z dokumentem potwierdzającym wiek. Osoby poniżej 16 lat wyłącznie pod opieką dorosłego z wypełnionym oświadczeniem opiekuna. Dzieci do 3 lat wchodzą bezpłatnie. Szczegóły i oświadczenie opiekuna: <a href="https://www.live2listen.com/regulamin" target="_blank" rel="noopener">regulamin Live2Listen</a>.</dd></div>
         <div class="info__row reveal"><dt>Dojazd</dt><dd>Organizator zachęca do komunikacji miejskiej lub taxi. Informacje o dojeździe i parkingach znajdziesz na <a href="https://atlasarena.pl" target="_blank" rel="noopener">stronie Atlas Areny</a>.</dd></div>
         <div class="info__row reveal"><dt>Organizator</dt><dd><a href="https://www.live2listen.com" target="_blank" rel="noopener">Live2Listen</a></dd></div>
-        <div class="info__row reveal"><dt>Regulamin</dt><dd><a href="assets/docs/regulamin-live2listen.pdf" target="_blank" rel="noopener">Regulamin wydarzeń Live2Listen (PDF)</a></dd></div>
+        <div class="info__row reveal"><dt>Regulamin</dt><dd><a href="https://www.live2listen.com/regulamin" target="_blank" rel="noopener">Regulamin wydarzeń Live2Listen</a></dd></div>
       </dl>
     </div>
 
@@ -374,10 +365,10 @@
       </div>
       <p class="media__pending reveal" data-accreditation-pending>Formularz akredytacyjny udostępnimy wkrótce. Do tego czasu pisz na adres podany niżej.</p>
       <dl class="contacts reveal">
-        <div><dt>Kontakt dla mediów</dt><dd><a href="mailto:media@padreguilherme.pl">media@padreguilherme.pl</a> <button class="copy" type="button" data-copy="media@padreguilherme.pl">Kopiuj</button></dd></div>
-        <div><dt>Partnerstwo i współpraca</dt><dd><a href="mailto:info@padreguilherme.pl">info@padreguilherme.pl</a> <button class="copy" type="button" data-copy="info@padreguilherme.pl">Kopiuj</button></dd></div>
+        <div><dt>Kontakt dla mediów</dt><dd><a href="mailto:kinga@live2listen.com">kinga@live2listen.com</a> <button class="copy" type="button" data-copy="kinga@live2listen.com">Kopiuj</button></dd></div>
+        <div><dt>Partnerstwo i sponsoring</dt><dd><a href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener" data-media="formularz-l2l">Formularz kontaktowy Live2Listen</a></dd></div>
       </dl>
-      <p class="muted reveal">Chcesz, żeby Twoja marka była obecna przy koncercie Padre Guilherme w Atlas Arenie? Napisz do nas.</p>
+      <p class="muted reveal">Chcesz, żeby Twoja marka była obecna przy koncercie Padre Guilherme w Atlas Arenie? Skontaktuj się przez formularz na stronie Live2Listen.</p>
     </div>
   </div>
 </section>
@@ -390,7 +381,7 @@
     <div class="final__content wrap">
     <p class="kicker reveal"><time datetime="2027-02-14">14.02.2027</time> · Atlas Arena, Łódź</p>
     <h2 class="final__title reveal" id="final-title">Do zobaczenia w Łodzi</h2>
-    <p class="final__text reveal">Bilety dostępne na eBilet.</p>
+    <p class="final__text reveal">Bilety już w sprzedaży.</p>
     <div class="reveal"><a class="btn btn--primary btn--lg" href="#bilety" data-ticket="final">Kup bilet</a></div>
   </div>
 </section>
@@ -407,15 +398,13 @@
     </div>
     <dl class="footer__roles reveal">
       <div><dt>Organizator</dt><dd><a href="https://www.live2listen.com" target="_blank" rel="noopener">Live2Listen</a></dd></div>
-      <div><dt>Bilety</dt><dd><a href="#bilety" data-ticket="footer">eBilet</a></dd></div>
       <div><dt>Partnerzy</dt><dd class="footer__partners"><a href="https://atlasarena.pl" target="_blank" rel="noopener">Atlas Arena</a><a href="https://www.koolwaters.com" target="_blank" rel="noopener">Koolwaters</a><a href="https://www.bookingartistagency.com" target="_blank" rel="noopener">Booking Artist Agency</a></dd></div>
-      <div><dt>Kontakt</dt><dd><a href="mailto:info@padreguilherme.pl">info@padreguilherme.pl</a><br><a href="mailto:media@padreguilherme.pl">media@padreguilherme.pl</a></dd></div>
+      <div><dt>Kontakt</dt><dd><a href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener">Formularz kontaktowy Live2Listen</a></dd></div>
     </dl>
     <div class="footer__legal">
       <p>Organizator: L2L sp. z o.o. (Live2Listen), ul. Opoczyńska 12/6, 02-522 Warszawa, KRS 0001121413.</p>
       <ul class="footer__links">
-        <li><a href="assets/docs/regulamin-live2listen.pdf" target="_blank" rel="noopener">Regulamin</a></li>
-        <li><a href="assets/docs/oswiadczenie-opiekuna-maloletniego.pdf" target="_blank" rel="noopener">Oświadczenie opiekuna</a></li>
+        <li><a href="https://www.live2listen.com/regulamin" target="_blank" rel="noopener">Regulamin</a></li>
         <li><a href="https://www.live2listen.com/prywatnosc" target="_blank" rel="noopener" data-privacy-link>Polityka prywatności</a></li>
         <li><button class="linklike" type="button" data-consent-open hidden>Ustawienia cookies</button></li>
       </ul>

@@ -195,25 +195,26 @@
     }
   }
 
-  /* ---------- Odliczanie ---------- */
+  /* ---------- Odliczanie (pełne dni do wydarzenia, czas polski) ---------- */
   function initCountdown() {
     var box = $('[data-countdown]');
     if (!box) return;
-    var target = Date.parse(cfg.countdownTarget || '2027-02-14T18:00:00+01:00');
-    var els = { d: $('[data-cd="d"]', box), h: $('[data-cd="h"]', box), m: $('[data-cd="m"]', box), s: $('[data-cd="s"]', box) };
-    var unit = $('[data-cd-unit="d"]', box);
-    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var ev = (cfg.eventDate || '2027-02-14').split('-').map(Number);
+    var num = $('[data-cd="d"]', box), unit = $('[data-cd-unit="d"]', box);
+    function todayInPoland() {
+      try {
+        var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).split('-').map(Number);
+        return Date.UTC(parts[0], parts[1] - 1, parts[2]);
+      } catch (e) { var d = new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); }
+    }
     function tick() {
-      var left = target - Date.now();
-      if (!(left > 0)) { box.hidden = true; return false; }
-      var d = Math.floor(left / 864e5);
-      els.d.textContent = d; unit.textContent = d === 1 ? 'dzień' : 'dni';
-      els.h.textContent = pad(Math.floor(left / 36e5) % 24);
-      els.m.textContent = pad(Math.floor(left / 6e4) % 60);
-      els.s.textContent = pad(Math.floor(left / 1e3) % 60);
+      var days = Math.round((Date.UTC(ev[0], ev[1] - 1, ev[2]) - todayInPoland()) / 864e5);
+      if (!(days > 0)) { box.hidden = true; return false; }
+      num.textContent = days;
+      unit.textContent = days === 1 ? 'dzień' : 'dni';
       return true;
     }
-    if (tick()) { box.hidden = false; setInterval(tick, 1000); }
+    if (tick()) { box.hidden = false; setInterval(tick, 60000); }
   }
 
   /* ---------- Pojawianie się elementów ---------- */

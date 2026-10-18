@@ -118,7 +118,7 @@ const jsonld = {
   '@context': 'https://schema.org',
   '@type': 'MusicEvent',
   name: 'Padre Guilherme — Love is My Religion | Atlas Arena, Łódź',
-  description: 'Koncert Padre Guilherme w Atlas Arenie w Łodzi. Support: Skytech.',
+  description: 'Koncert Padre Guilherme w Atlas Arenie w Łodzi.',
   startDate: '2027-02-14',
   eventStatus: 'https://schema.org/EventScheduled',
   eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
@@ -131,7 +131,7 @@ const jsonld = {
   },
   performer: [
     { '@type': 'Person', name: 'Padre Guilherme', sameAs: SOCIAL.map((s) => s.href) },
-    { '@type': 'Person', name: 'Skytech', url: 'http://skytechmusic.com' },
+    ...(config.supportAnnounced ? [{ '@type': 'Person', name: 'Skytech', url: 'http://skytechmusic.com' }] : []),
   ],
   organizer: { '@type': 'Organization', name: 'Live2Listen', url: 'https://www.live2listen.com' },
 };
@@ -157,6 +157,14 @@ if (config.ticketUrl) {
   html = html.replace(/\sdata-ticket-pending([ >])/g, ' data-ticket-pending hidden$1');
 } else {
   html = html.replace(/\sdata-ticket-ready([ >])/g, ' data-ticket-ready hidden$1');
+}
+
+// Sekcje ukryte do czasu ogłoszenia: support (Skytech) i harmonogram.
+for (const [flag, attr] of [[config.supportAnnounced, 'data-support'], [config.scheduleAnnounced, 'data-schedule']]) {
+  if (flag) { html = html.replaceAll(` ${attr}`, ''); continue; }
+  html = html.replace(new RegExp(`<!-- [^>]*\\(${attr}:[^>]*-->\\s*<section\\b[^>]*\\s${attr}[\\s\\S]*?</section>\\s*`, 'g'), '');
+  html = html.replace(new RegExp(`[ \\t]*<li ${attr}>[\\s\\S]*?</li>\\n`, 'g'), '');
+  if (html.includes(attr)) throw new Error(`Nie usunięto wszystkich elementów ${attr}`);
 }
 
 // Akredytacje: przycisk wpisany do HTML (działa także bez JavaScriptu).

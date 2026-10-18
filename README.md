@@ -18,7 +18,6 @@ assets/js/main.js          interakcje, animacje, lightbox, FAQ, pomiar i zgody
 assets/css/main.css        style (fonty self-hosted, tokeny, komponenty, tryb podglądu)
 assets/img/                zdjęcia AVIF + JPEG w kilku szerokościach (generowane)
 assets/fonts/              Manrope, Saira, Pinyon Script (woff2, latin + latin-ext)
-assets/docs/               regulamin i oświadczenie opiekuna (PDF)
 source/images/             oryginały zdjęć (wejście dla generatora)
 design/canvas-v1/          kopia bezpieczeństwa poprzedniej wersji (kanwa projektowa)
 scripts/                   build obrazów, HTML, grafik OG, podglądu i testy
@@ -44,6 +43,9 @@ Wszystko w `assets/js/config.js`, potem `npm run html`:
 | Ustawienie | Efekt |
 |------------|-------|
 | `ticketUrl` | Wszystkie przyciski „Kup bilet” prowadzą do wydarzenia w eBilet (nowa karta, z UTM). Bez tego prowadzą do sekcji #bilety. |
+| `supportAnnounced` | `true` przywraca sekcję Skytech i „Support” w pasku informacji. |
+| `scheduleAnnounced` | `true` przywraca „Plan wieczoru” i link „Plan” w menu. |
+| `eventDate` | Data do odliczania dni. |
 | `accreditationUrl` + `accreditationReady` | Przycisk „Złóż wniosek o akredytację” (obecnie włączony; `false` go ukrywa). |
 | `pressPackUrl` | Pokazuje przycisk „Pobierz press pack”. |
 | `newsletterEndpoint` | Pokazuje formularz „Bądź na bieżąco” (POST JSON `{ email, consent, source, campaign }`; sukces tylko przy odpowiedzi 2xx). |

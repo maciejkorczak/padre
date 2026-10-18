@@ -7,9 +7,8 @@
  * (linki biletowe są wpisywane do HTML także dla przeglądarek bez JavaScriptu).
  */
 window.PADRE_CONFIG = {
-  // Adres KONKRETNEGO wydarzenia w eBilet (nie strona główna serwisu).
-  // Do uzupełnienia po otrzymaniu linku od organizatora (Live2Listen).
-  ticketUrl: '',
+  // Strona wydarzenia w eBilet (sprzedaż od 13.10.2026). Wszystkie przyciski „Kup bilet” prowadzą tutaj.
+  ticketUrl: 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme',
   // Dopisuje utm_* z adresu strony do linku eBilet (atrybucja kampanii po stronie sprzedawcy).
   passUtmToTicketUrl: true,
 
@@ -33,6 +32,10 @@ window.PADRE_CONFIG = {
   metaPixelId: '',
   privacyPolicyUrl: 'https://www.live2listen.com/prywatnosc',
 
-  // Odliczanie do otwarcia bram (godzina do potwierdzenia przez organizatora).
-  countdownTarget: '2027-02-14T18:00:00+01:00'
+  // Sekcje ukryte do czasu ogłoszenia (decyzja z 18.10.2026). true = sekcja wraca na stronę.
+  supportAnnounced: false,   // sekcja Skytech, „Support” w pasku informacji, wykonawca w danych strukturalnych
+  scheduleAnnounced: false,  // sekcja „Plan wieczoru” i link „Plan” w menu
+
+  // Odliczanie: liczba dni do wydarzenia (czas polski), bez godzin.
+  eventDate: '2027-02-14'
 };
