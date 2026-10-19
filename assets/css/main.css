@@ -413,8 +413,11 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 
 /* ==== Skytech ==== */
 .support__grid { display: grid; gap: 32px; align-items: center; }
-.support__photo { margin: 0; width: min(260px, 58vw); }
-.support__photo .frame { aspect-ratio: 3 / 4; }
+.support__photos { display: grid; gap: 12px; width: min(360px, 78vw); }
+.support__photo { margin: 0; }
+.support__photo--main .frame { aspect-ratio: 1 / 1; }
+.support__photo--wide .frame { aspect-ratio: 3 / 2; }
+.support__photo--wide .frame img { object-position: 55% 50%; }
 .support__copy { min-width: 0; }
 .support__copy > p { margin-top: 18px; max-width: 58ch; color: var(--fg-2); }
 .support__links { margin-top: 12px; }
@@ -431,8 +434,8 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
   .video-card__thumb { width: 220px; flex: none; }
 }
 @media (min-width: 960px) {
-  .support__grid { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; }
-  .support__photo { width: 100%; }
+  .support__grid { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; }
+  .support__photos { width: 100%; }
 }
 
 /* ==== Plan wieczoru ==== */

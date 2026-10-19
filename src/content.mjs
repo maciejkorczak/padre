@@ -44,7 +44,7 @@ export const POSTERS = [
 
 const REGULAMIN = { href: 'https://www.live2listen.com/regulamin', label: 'Regulamin wydarzeń Live2Listen' };
 const FORMULARZ = { href: 'https://www.live2listen.com/#kontakt', label: 'Formularz kontaktowy Live2Listen' };
-const ODSPRZEDAZ = 'Bilety na wydarzenia Live2Listen nie podlegają standardowemu zwrotowi, z wyjątkiem przypadków przewidzianych w przepisach prawa lub regulaminie sprzedaży. Jeśli nie możesz przyjść, skorzystaj z oficjalnej odsprzedaży w aplikacji eBilet — będzie dostępna najpóźniej tydzień przed koncertem.';
+const ODSPRZEDAZ = 'Bilety na wydarzenia Live2Listen nie podlegają standardowemu zwrotowi, z wyjątkiem przypadków przewidzianych w przepisach prawa lub regulaminie sprzedaży. Jeśli nie możesz przyjść, skorzystaj z oficjalnej odsprzedaży biletów — będzie dostępna najpóźniej tydzień przed koncertem.';
 
 // Pytania w kolejności z briefu. Pytania o miejsca siedzące i bilety VIP dodamy,
 // gdy organizator potwierdzi odpowiedzi (nie publikujemy pustych odpowiedzi).
@@ -60,9 +60,9 @@ export const FAQ_MAIN = [
   { q: 'Jak wygląda dostępność dla osób z niepełnosprawnościami?', a: [
     'Jeśli osoba z niepełnosprawnością przychodzi z opiekunem, bilet potrzebny jest dla każdej z tych osób.',
     'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet — obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'] },
-  { q: 'Czy bilety można przekazać innej osobie?', a: ['Tak, bilet możesz przekazać innej osobie w aplikacji eBilet.', ODSPRZEDAZ] },
+  { q: 'Czy bilety można przekazać innej osobie?', a: ['Tak, bilet możesz przekazać innej osobie w aplikacji, w której go kupiono.', ODSPRZEDAZ] },
   { q: 'Jak skontaktować się z organizatorem?', a: [
-    'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). Napisz przez formularz kontaktowy na stronie Live2Listen. W sprawach zakupu biletu, braku biletu w e-mailu lub kodu kreskowego kontaktuj się z eBilet.'], contacts: [
+    'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). Napisz przez formularz kontaktowy na stronie Live2Listen. W sprawach zakupu biletu, braku biletu w e-mailu lub kodu kreskowego kontaktuj się z obsługą klienta serwisu, w którym kupiono bilet.'], contacts: [
     { label: 'Media', email: 'kinga@live2listen.com' }], links: [FORMULARZ] },
   { q: 'Co w przypadku zmiany terminu?', a: ['Jeśli koncert zostanie przeniesiony na inny termin lub do innego obiektu, kupione bilety zachowują ważność i nie trzeba ich wymieniać. O zmianie poinformuje Cię e-mailem dystrybutor biletów, a organizator opublikuje informację w swoich kanałach i na tej stronie.'] },
 ];
@@ -72,7 +72,7 @@ export const FAQ_MORE = [
   { q: 'Co muszę mieć ze sobą, aby wejść na koncert?', a: ['Bilet i dokument tożsamości.'] },
   { q: 'Czy bilet elektroniczny trzeba wydrukować?', a: ['Nie. Na wejściu pokażesz bilet elektroniczny, np. na smartfonie. Zdjęcia i zrzuty ekranu biletów nie są akceptowane.'] },
   { q: 'Kupiłem/-am kilka biletów na swoje nazwisko. Czy pozostałe osoby wejdą bez problemu?', a: ['Tak, o ile ich bilety nie zostaną wcześniej zeskanowane. Najlepiej wchodźcie razem. Każdy bilet ma unikalny kod uprawniający do jednorazowego wejścia.'] },
-  { q: 'Kupiłem/-am bilet, ale nie dostałem/-am go e-mailem albo nie ma na nim kodu kreskowego. Co robić?', a: ['Płatność mogła jeszcze nie zostać zaksięgowana. Jeśli po 24 godzinach (dniu roboczym) nadal nie masz biletu albo bilet nie ma kodu kreskowego, skontaktuj się z obsługą klienta eBilet. Sprawdź też, czy adres e-mail przy zakupie nie zawierał literówki.'] },
+  { q: 'Kupiłem/-am bilet, ale nie dostałem/-am go e-mailem albo nie ma na nim kodu kreskowego. Co robić?', a: ['Płatność mogła jeszcze nie zostać zaksięgowana. Jeśli po 24 godzinach (dniu roboczym) nadal nie masz biletu albo bilet nie ma kodu kreskowego, skontaktuj się z obsługą klienta serwisu, w którym kupiono bilet. Sprawdź też, czy adres e-mail przy zakupie nie zawierał literówki.'] },
   { q: 'Jakich przedmiotów nie można wnosić?', a: ['Na teren imprezy nie wolno wnosić m.in.:'], list: [
     'kamer i sprzętu nagrywającego audio i wideo',
     'profesjonalnego sprzętu fotograficznego, w tym aparatów z wymienną optyką i zoomem optycznym powyżej 6x',

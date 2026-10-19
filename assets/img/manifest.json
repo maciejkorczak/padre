@@ -76,6 +76,33 @@
       1200
     ]
   },
+  "skytech-pomaranczowe": {
+    "w": 2000,
+    "h": 2000,
+    "widths": [
+      480,
+      800,
+      1200
+    ]
+  },
+  "skytech-sylwetka": {
+    "w": 2000,
+    "h": 1333,
+    "widths": [
+      480,
+      800,
+      1200
+    ]
+  },
+  "skytech-biale-tlo": {
+    "w": 1335,
+    "h": 2000,
+    "widths": [
+      480,
+      800,
+      1200
+    ]
+  },
   "skytech-youtube": {
     "w": 1280,
     "h": 720,

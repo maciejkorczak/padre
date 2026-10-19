@@ -134,7 +134,7 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 
 ## H. Testy
 
-**Automatyczne: `npm test` — 106/106 zaliczone** (Playwright, Chromium 141):
+**Automatyczne: `npm test` — 108/108 zaliczone** (Playwright, Chromium 141):
 - produkcyjny HTML: brak zakazanych sformułowań, brak notatek podglądu, brak linku do strony głównej eBilet, poprawne title, description, canonical, OG, JSON-LD;
 - desktop 1440: jeden H1, hierarchia nagłówków, 8 przycisków „Kup bilet” o jednej nazwie (+ link w stopce), brak poziomego przewijania, brak błędów w konsoli, wszystkie obrazy z `alt`;
 - lightbox: otwieranie, fokus, strzałki, zapętlenie, pułapka fokusu, ESC, powrót fokusu; gest przesunięcia na telefonie;
@@ -194,3 +194,10 @@ Na podstawie PDF z uwagami (wydruk thelastdaynight.thebooking.eu z 12.10.2026):
 - **FAQ:** nowa odpowiedź „Gdzie kupić bilety?” (bilety wyłącznie przez linki na tej stronie), „kod kreskowy” zamiast „QR”, poprawiona odpowiedź o szatni, usunięte pytania o odwołanie wydarzenia i zgubione rzeczy.
 - **Stopka:** bez kolumny „Bilety”.
 - **Wydruk:** style do druku (PDF do recenzji bez nachodzącego nagłówka, bez pomarańczowego koła za „#79”, ze zdjęciem w hero).
+
+## Poprawki z 19.10.2026
+
+- **Bez nazwy sprzedawcy na stronie:** usunięte wszystkie wzmianki o eBilet w treści (karta biletowa: „Bilety już w sprzedaży.”, opis przycisku, odsprzedaż, FAQ, meta description, tekst dla czytników ekranu, dane strukturalne). Przyciski „Kup bilet” nadal prowadzą bezpośrednio do strony wydarzenia.
+- **Skytech wrócił** (`supportAnnounced: true`): sekcja Official support, „Support: Skytech” w pasku informacji, Skytech w danych strukturalnych. Nowe zdjęcia: portret na pomarańczowym tle i sylwetka na tle smugi światła. Zdjęcie na białym tle jest w `source/images/skytech-biale-tlo.jpg`, nieużyte (jasne tło odcina się od ciemnej strony).
+- Plan wieczoru nadal ukryty (godziny nie są komunikowane).
+- Poprawka przewijania na telefonie przy ograniczonym ruchu; komentarze szablonu usuwane z HTML.

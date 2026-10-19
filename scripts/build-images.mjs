@@ -2,7 +2,7 @@
 // do assets/img oraz manifest z wymiarami (używany przez scripts/build-html.mjs).
 // Uruchomienie: npm run images
 import sharp from 'sharp';
-import { mkdir, writeFile, readdir } from 'node:fs/promises';
+import { mkdir, writeFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +22,9 @@ const SPECS = {
   media: { widths: PHOTO },
   plan: { widths: [640, 1024, 1440] },
   skytech: { widths: [480, 800, 1200] },
+  'skytech-pomaranczowe': { widths: [480, 800, 1200] },
+  'skytech-sylwetka': { widths: [480, 800, 1200] },
+  'skytech-biale-tlo': { widths: [480, 800, 1200] },
   'skytech-youtube': { widths: [640, 1280] },
   'djmag-top100-2026': { widths: [540, 1080] },
   'galeria-01': { widths: PHOTO },
@@ -54,7 +57,11 @@ for (const [name, spec] of Object.entries(SPECS)) {
   // Gdy oryginał jest mniejszy niż największa zaplanowana szerokość, dodaj go w pełnym rozmiarze.
   if (spec.widths.some((w) => w > meta.width)) widths.push(meta.width);
   const uniq = [...new Set(widths)].sort((a, b) => a - b);
+  const srcTime = (await stat(srcFile)).mtimeMs;
   for (const w of uniq) {
+    // Pomija warianty, które już istnieją i są nowsze od oryginału (szybsze przebudowy).
+    const fresh = await Promise.all(['avif', 'jpg'].map((ext) => stat(path.join(OUT, `${name}-${w}.${ext}`)).then((st) => st.mtimeMs >= srcTime, () => false)));
+    if (fresh.every(Boolean)) continue;
     const img = sharp(buf).resize({ width: w, withoutEnlargement: true });
     await img.clone().avif({ quality: 52, effort: 6 }).toFile(path.join(OUT, `${name}-${w}.avif`));
     await img.clone().jpeg({ quality: 78, mozjpeg: true, progressive: true }).toFile(path.join(OUT, `${name}-${w}.jpg`));

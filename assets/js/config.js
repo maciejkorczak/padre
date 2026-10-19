@@ -32,8 +32,8 @@ window.PADRE_CONFIG = {
   metaPixelId: '',
   privacyPolicyUrl: 'https://www.live2listen.com/prywatnosc',
 
-  // Sekcje ukryte do czasu ogłoszenia (decyzja z 18.10.2026). true = sekcja wraca na stronę.
-  supportAnnounced: false,   // sekcja Skytech, „Support” w pasku informacji, wykonawca w danych strukturalnych
+  // Sekcje warunkowe. Support (Skytech) przywrócony 19.10.2026; harmonogram ukryty do publikacji.
+  supportAnnounced: true,    // sekcja Skytech, „Support” w pasku informacji, wykonawca w danych strukturalnych
   scheduleAnnounced: false,  // sekcja „Plan wieczoru” i link „Plan” w menu
 
   // Odliczanie: liczba dni do wydarzenia (czas polski), bez godzin.

@@ -52,7 +52,7 @@ await prepare(dp);
 const shots = [];
 shots.push(await dp.screenshot({ type: 'jpeg', quality: 84 }));
 await dp.evaluate(() => { document.querySelector('[data-header]').style.visibility = 'hidden'; });
-const groups = [['#wydarzenie', '#wideo'], ['#djmag'], ['#artysta'], ['#galeria'], ['#wydarzenia'], ['#love'], ['#bilety'], ['#faq'], ['#media'], ['#kup', '.footer']];
+const groups = [['#wydarzenie', '#wideo'], ['#djmag'], ['#artysta'], ['#galeria'], ['#wydarzenia'], ['#love'], ['#support'], ['#bilety'], ['#faq'], ['#media'], ['#kup', '.footer']];
 for (const [from, to = from] of groups) {
   const clip = await dp.evaluate(([a, b]) => {
     const r1 = document.querySelector(a).getBoundingClientRect();

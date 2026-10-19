@@ -136,7 +136,7 @@ const jsonld = {
   organizer: { '@type': 'Organization', name: 'Live2Listen', url: 'https://www.live2listen.com' },
 };
 // Oferta tylko z potwierdzonym linkiem; bez ceny i dostępności (nie są potwierdzone).
-if (config.ticketUrl) jsonld.offers = { '@type': 'Offer', url: config.ticketUrl, seller: { '@type': 'Organization', name: 'eBilet' } };
+if (config.ticketUrl) jsonld.offers = { '@type': 'Offer', url: config.ticketUrl };
 
 let html = await readFile(path.join(root, 'src/index.html'), 'utf8');
 
@@ -181,6 +181,8 @@ for (const f of ['assets/css/main.css', 'assets/js/config.js', 'assets/js/main.j
 
 const left = html.match(/<pg-img|<!--pg:/g);
 if (left) throw new Error(`Nierozwinięte znaczniki: ${left.length}`);
+// Komentarze szablonu nie trafiają na stronę.
+html = html.replace(/[ \t]*<!--[\s\S]*?-->\n?/g, '');
 
 const outDir = PREVIEW ? path.join(root, 'dist-preview/site') : root;
 await mkdir(outDir, { recursive: true });

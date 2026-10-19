@@ -126,7 +126,7 @@
     $$('[data-ticket]').forEach(function (a) {
       if (href) {
         a.href = href; a.target = '_blank'; a.rel = 'noopener';
-        if (!$('.visually-hidden', a)) a.insertAdjacentHTML('beforeend', '<span class="visually-hidden"> (eBilet, otwiera się w nowej karcie)</span>');
+        if (!$('.visually-hidden', a)) a.insertAdjacentHTML('beforeend', '<span class="visually-hidden"> (sprzedaż biletów, otwiera się w nowej karcie)</span>');
       } else {
         a.setAttribute('href', '#bilety'); a.removeAttribute('target');
       }
