@@ -13,8 +13,9 @@ execFileSync('node', [path.join(root, 'scripts/build-html.mjs')], { stdio: 'inhe
 const html = await readFile(path.join(root, 'index.html'), 'utf8');
 const css = await readFile(path.join(root, 'assets/css/main.css'), 'utf8');
 const files = new Set(['index.html', '.htaccess', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'assets/og-image.jpg', 'assets/apple-touch-icon.png', 'assets/css/main.css', 'assets/js/config.js', 'assets/js/main.js']);
-for (const m of html.matchAll(/(?:href|src|srcset|imagesrcset|data-lb-avif|data-lb-jpg)="([^"]+)"/g)) {
-  for (const part of m[1].split(',')) {
+for (const m of html.matchAll(/(href|src|srcset|imagesrcset|data-lb-avif|data-lb-jpg)="([^"]+)"/g)) {
+  // Przecinki rozdzielają adresy tylko w srcset; w href mogą być częścią adresu (np. link eBilet).
+  for (const part of /srcset/.test(m[1]) ? m[2].split(',') : [m[2]]) {
     const p = part.trim().split(/\s+/)[0].split('?')[0];
     if (p && !/^(https?:|mailto:|#|data:)/.test(p)) files.add(p);
   }

@@ -89,7 +89,7 @@ check('Canonical, OG, Twitter, robots', ['rel="canonical"', 'property="og:image"
 const ldAll = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
 const byType = (t) => ldAll['@graph'].filter((g) => g['@type'] === t);
 const ld = byType('MusicEvent')[0];
-check('JSON-LD MusicEvent (startDate, location, performer ×2, organizer, offers.url, InStock)', ld && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 2 && byType('Organization')[0]?.name === 'Live2Listen' && ld.offers?.url === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme' && ld.offers?.availability === 'https://schema.org/InStock');
+check('JSON-LD MusicEvent (startDate, location, performer ×2, organizer, offers.url, InStock)', ld && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 2 && byType('Organization')[0]?.name === 'Live2Listen' && ld.offers?.url === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp#padre-guilherme_155685,1622' && ld.offers?.availability === 'https://schema.org/InStock');
 check('JSON-LD: WebSite, WebPage, FAQPage; bez cen i nazwy sprzedawcy', ['WebSite', 'WebPage', 'FAQPage'].every((t) => byType(t).length === 1) && byType('FAQPage')[0].mainEntity.length >= 15 && !/price|ebilet/i.test(JSON.stringify(ldAll).replace(/https:\/\/www\.ebilet\.pl[^"]*/g, '')));
 check('H1 zawiera nazwę wydarzenia (tekst dla wyszukiwarek)', /<h1[^>]*>[\s\S]*?Padre Guilherme[\s\S]*?koncert w Atlas Arenie w Łodzi, 14 lutego 2027[\s\S]*?<\/h1>/.test(html));
 check('Brak sekcji „Polska już go zna” (usunięta decyzją zespołu)', !/Polska już go zna|id="polska"/.test(html));
@@ -97,7 +97,7 @@ check('Brak godzin wydarzenia na stronie', !/\b(18|19|20|21):00\b/.test(html));
 check('Sekcja Skytech widoczna (support ogłoszony), „Plan wieczoru” ukryty', html.includes('id="support"') && html.includes('skytech-pomaranczowe') && !/Plan wieczoru|href="#plan"|data-support|data-schedule/.test(html));
 check('Brak wzmianek o eBilet w treści strony (tylko adres w linkach)', !/eBilet/.test(html.replace(/https:\/\/www\.ebilet\.pl[^"]*/g, '')));
 check('Linki do regulaminu prowadzą do strony Live2Listen (bez PDF)', !/\.pdf/.test(html) && (html.match(/href="https:\/\/www\.live2listen\.com\/regulamin"/g) || []).length >= 3);
-check('Kontakt: formularz L2L i kinga@live2listen.com, bez adresów @padreguilherme.pl', html.includes('https://www.live2listen.com/#kontakt') && html.includes('kinga@live2listen.com') && !/@padreguilherme\.pl|hello@live2listen|lost@live2listen/.test(html));
+check('Kontakt: tylko formularz L2L, bez adresów e-mail na stronie', html.includes('https://www.live2listen.com/#kontakt') && !/kinga@|@padreguilherme\.pl|mailto:/.test(html));
 check('FAQ: kod kreskowy zamiast QR, bez pytań o odwołanie i zgubione rzeczy', !/QR|odwołania wydarzenia|Zgubiłem/.test(html) && html.includes('kodu kreskowego'));
 check('Końcowe CTA: „Bilety już w sprzedaży.”', html.includes('Bilety już w sprzedaży.'));
 check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy Live2Listen)', html.includes('href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener" data-accreditation>'));
@@ -119,7 +119,7 @@ check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy L
   const tickets = await page.$$eval('[data-ticket]', (els) => els.map((a) => ({ loc: a.dataset.ticket, href: a.getAttribute('href'), text: a.textContent.trim() })));
   const locs = tickets.map((t) => t.loc);
   check('CTA „Kup bilet” w: menu, hero, po bio, love, bilety, FAQ, final, sticky', ['hero', 'menu', 'bio', 'love', 'bilety', 'final', 'sticky', 'faq'].every((l) => locs.includes(l)), locs.join(', '));
-  check('Wszystkie CTA prowadzą bezpośrednio do wydarzenia w eBilet', tickets.every((t) => t.href === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme'), [...new Set(tickets.map((t) => t.href))].join(' | '));
+  check('Wszystkie CTA prowadzą do wydarzenia w eBilet z linkiem partnera L2L', tickets.every((t) => t.href === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp#padre-guilherme_155685,1622'), [...new Set(tickets.map((t) => t.href))].join(' | '));
   check('Karta biletowa: przycisk zamiast komunikatu', await page.locator('#bilety [data-ticket="bilety"]').isVisible() && !(await page.locator('[data-ticket-pending]').isVisible()));
   check('Jednolita nazwa CTA', tickets.every((t) => /^Kup bilet/i.test(t.text)), [...new Set(tickets.map((t) => t.text))].join(' | '));
   await scrollThrough(page);

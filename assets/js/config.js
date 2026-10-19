@@ -7,8 +7,10 @@
  * (linki biletowe są wpisywane do HTML także dla przeglądarek bez JavaScriptu).
  */
 window.PADRE_CONFIG = {
-  // Strona wydarzenia w eBilet (sprzedaż od 13.10.2026). Wszystkie przyciski „Kup bilet” prowadzą tutaj.
-  ticketUrl: 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme',
+  // Strona wydarzenia w eBilet z parametrem partnera Live2Listen (partner=l2lsp: prowizja organizatora,
+  // decyzja Marka z 19.10.2026). Wszystkie przyciski „Kup bilet” prowadzą tutaj, UTM są dopisywane do adresu.
+  // Adres bez ukośnika przed „?”: wersja z ukośnikiem przekierowuje (301) dokładnie na ten adres.
+  ticketUrl: 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp#padre-guilherme_155685,1622',
   // Dopisuje utm_* z adresu strony do linku eBilet (atrybucja kampanii po stronie sprzedawcy).
   passUtmToTicketUrl: true,
 

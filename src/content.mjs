@@ -63,8 +63,7 @@ export const FAQ_MAIN = [
     'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet - obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'] },
   { q: 'Czy bilety można przekazać innej osobie?', a: ['Tak, bilet możesz przekazać innej osobie w aplikacji, w której go kupiono.', ODSPRZEDAZ] },
   { q: 'Jak skontaktować się z organizatorem?', a: [
-    'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). Napisz przez formularz kontaktowy na stronie Live2Listen. W sprawach zakupu biletu, braku biletu w e-mailu lub kodu kreskowego kontaktuj się z obsługą klienta serwisu, w którym kupiono bilet.'], contacts: [
-    { label: 'Media', email: 'kinga@live2listen.com' }], links: [FORMULARZ] },
+    'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). Napisz przez formularz kontaktowy na stronie Live2Listen, także w sprawach mediów i akredytacji. W sprawach zakupu biletu, braku biletu w e-mailu lub kodu kreskowego kontaktuj się z obsługą klienta serwisu, w którym kupiono bilet.'], links: [FORMULARZ] },
   { q: 'Co w przypadku zmiany terminu?', a: ['Jeśli koncert zostanie przeniesiony na inny termin lub do innego obiektu, kupione bilety zachowują ważność i nie trzeba ich wymieniać. O zmianie poinformuje Cię e-mailem dystrybutor biletów, a organizator opublikuje informację w swoich kanałach i na tej stronie.'] },
 ];
 
