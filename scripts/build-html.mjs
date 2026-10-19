@@ -4,6 +4,7 @@
 //   node scripts/build-html.mjs            -> index.html
 //   node scripts/build-html.mjs --preview  -> dist-preview/site/index.html (baza dla podglądu-artefaktu)
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
@@ -38,11 +39,19 @@ const img = (name) => {
   if (!m) throw new Error(`Brak zdjęcia w manifeście: ${name}`);
   return m;
 };
-const srcset = (name, ext) => img(name).widths.map((w) => `assets/img/${name}-${w}.${ext} ${w}w`).join(', ');
+// Adres zdjęcia z wersją (?v=skrót treści): zdjęcia mają cache na rok, więc po podmianie pliku
+// przeglądarki pobiorą nową wersję zamiast trzymać starą.
+const versions = {};
+const imgUrl = (name, w, ext) => {
+  const f = `assets/img/${name}-${w}.${ext}`;
+  versions[f] ??= createHash('sha1').update(readFileSync(path.join(root, f))).digest('hex').slice(0, 8);
+  return `${f}?v=${versions[f]}`;
+};
+const srcset = (name, ext) => img(name).widths.map((w) => `${imgUrl(name, w, ext)} ${w}w`).join(', ');
 const fallback = (name) => {
   const ws = img(name).widths;
   const w = ws.find((x) => x >= 1000) || ws[ws.length - 1];
-  return `assets/img/${name}-${w}.jpg`;
+  return imgUrl(name, w, 'jpg');
 };
 const largest = (name) => img(name).widths[img(name).widths.length - 1];
 
@@ -77,7 +86,7 @@ const gallery = GALLERY.map((g, i) => {
   const m = img(g.img);
   const L = largest(g.img);
   return `<li class="gallery__item gallery__item--${g.layout} reveal" style="--i:${i % 3}">
-        <button class="gallery__btn" type="button" data-lb-index="${i}" data-lb-avif="assets/img/${g.img}-${L}.avif" data-lb-jpg="assets/img/${g.img}-${L}.jpg" data-lb-w="${m.w}" data-lb-h="${m.h}" data-lb-caption="${esc(g.caption)}" aria-label="Powiększ zdjęcie: ${esc(g.caption)}">
+        <button class="gallery__btn" type="button" data-lb-index="${i}" data-lb-avif="${imgUrl(g.img, L, 'avif')}" data-lb-jpg="${imgUrl(g.img, L, 'jpg')}" data-lb-w="${m.w}" data-lb-h="${m.h}" data-lb-caption="${esc(g.caption)}" aria-label="Powiększ zdjęcie: ${esc(g.caption)}">
           <span class="gallery__frame"><span class="gallery__plx" data-parallax-inner>${picture({ name: g.img, sizes: g.sizes, alt: g.caption, pos: g.pos })}</span></span>
         </button>
       </li>`;
@@ -111,10 +120,10 @@ const faq = `<div class="acc-group reveal" data-acc>
       ${FAQ_MORE.map((q, i) => faqItem(q, `faq-m${i + 1}`)).join('\n      ')}
       </div>`;
 
-const heroPreload = ['hero-m', 'hero'].map((n) => `<link rel="preload" as="image" type="image/avif" imagesrcset="${srcset(n, 'avif')}" imagesizes="100vw" media="${n === 'hero-m' ? '(max-width: 767px)' : '(min-width: 768px)'}" fetchpriority="high">`).join('\n');
+const heroPreload = ['hero-hd-m', 'hero-hd'].map((n) => `<link rel="preload" as="image" type="image/avif" imagesrcset="${srcset(n, 'avif')}" imagesizes="100vw" media="${n === 'hero-hd-m' ? '(max-width: 767px)' : '(min-width: 768px)'}" fetchpriority="high">`).join('\n');
 
 // Dane strukturalne (@graph): strona, wydarzenie, wykonawcy, organizator i FAQ widoczne na stronie.
-const IMG = [`${SITE_URL}assets/og-image.jpg`, `${SITE_URL}assets/img/hero-1920.jpg`];
+const IMG = [`${SITE_URL}assets/og-image.jpg`, `${SITE_URL}assets/img/hero-hd-1920.jpg`];
 const padre = {
   '@type': 'Person', '@id': `${SITE_URL}#padre-guilherme`, name: 'Padre Guilherme', alternateName: 'Guilherme Peixoto',
   description: 'Portugalski ksiądz, DJ i producent muzyki elektronicznej.', nationality: { '@type': 'Country', name: 'Portugalia' },
