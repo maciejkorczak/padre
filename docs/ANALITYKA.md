@@ -9,7 +9,7 @@
 ## Zgoda (Consent Mode v2)
 
 1. Gdy skonfigurowano jakiekolwiek narzędzie, strona ustawia `gtag('consent', 'default', …)` z wartościami `denied` dla `ad_storage`, `analytics_storage`, `ad_user_data` i `ad_personalization`.
-2. Pojawia się baner: „Akceptuję wszystkie”, „Tylko niezbędne”, „Wybieram” (osobno analityczne i marketingowe).
+2. Pojawia się baner: „Akceptuję”, „Tylko niezbędne”, „Ustawienia” (osobno analityczne i marketingowe).
 3. Skrypty ładują się **dopiero po zgodzie**:
    - GTM: po zgodzie analitycznej lub marketingowej (tagi w GTM respektują stan zgody),
    - GA4 (bez GTM): po zgodzie analitycznej,
@@ -56,7 +56,7 @@ Przy `passUtmToTicketUrl: true` parametry `utm_*` z adresu strony są dopisywane
 ## Do zrobienia przed kampanią
 
 1. Ustalić, kto jest administratorem danych na padreguilherme.pl, i przygotować politykę prywatności (`privacyPolicyUrl`).
-2. Wpisać `gtmId` (zalecane) albo `ga4Id`, ewentualnie `metaPixelId`.
+2. Wpisać `gtmId` (zalecane) albo `ga4Id`. Meta Pixel jest już wpisany.
 3. W GTM: tagi GA4 i Meta z ustawieniami zgody; wyzwalacze na zdarzenia z tabeli.
 4. Zapytać eBilet o raportowanie sprzedaży wg UTM i o możliwość tagu konwersji.
 5. Po wdrożeniu: sprawdzić w trybie podglądu GTM / DebugView, czy zdarzenia przychodzą tylko po zgodzie.
