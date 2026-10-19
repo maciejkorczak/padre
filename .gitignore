@@ -3,3 +3,4 @@ dist-preview/
 .lighthouse/
 *.log
 .DS_Store
+dist/

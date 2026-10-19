@@ -1,0 +1,62 @@
+# padreguilherme.pl — konfiguracja Apache (home.pl)
+
+# Zawsze HTTPS i adres bez www (jeden adres = lepsze SEO).
+# Reguły działają tylko dla padreguilherme.pl, więc na adresie testowym nic nie przekierowują.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^www\.padreguilherme\.pl$ [NC]
+  RewriteRule ^ https://padreguilherme.pl%{REQUEST_URI} [L,R=301]
+  RewriteCond %{HTTP_HOST} ^padreguilherme\.pl$ [NC]
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+  RewriteRule ^ https://padreguilherme.pl%{REQUEST_URI} [L,R=301]
+  # /index.html -> /
+  RewriteCond %{THE_REQUEST} \s/index\.html[\s?] [NC]
+  RewriteRule ^index\.html$ https://%{HTTP_HOST}/ [L,R=301]
+</IfModule>
+
+# Typy plików (AVIF i fonty bywają serwowane bez Content-Type)
+<IfModule mod_mime.c>
+  AddType image/avif .avif
+  AddType font/woff2 .woff2
+  AddType image/svg+xml .svg
+  AddType application/manifest+json .webmanifest
+  AddDefaultCharset utf-8
+  AddCharset utf-8 .html .css .js .xml .txt
+</IfModule>
+
+# Kompresja
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript text/javascript application/json application/xml image/svg+xml
+</IfModule>
+
+# Cache: zasoby wersjonowane (?v=) i zdjęcia na rok, HTML zawsze świeży
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType image/avif "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(avif|jpg|png|svg|woff2|css|js)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Bez listowania katalogów i bez dostępu do plików ukrytych
+Options -Indexes
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>

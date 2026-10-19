@@ -32,6 +32,10 @@ window.PADRE_CONFIG = {
   metaPixelId: '',
   privacyPolicyUrl: 'https://www.live2listen.com/prywatnosc',
 
+  // Weryfikacja domeny (opcjonalnie; alternatywa: rekord TXT w DNS home.pl).
+  googleSiteVerification: '',     // Google Search Console: wartość content z meta google-site-verification
+  facebookDomainVerification: '', // Meta Business: wartość content z meta facebook-domain-verification
+
   // Sekcje warunkowe. Support (Skytech) przywrócony 19.10.2026; harmonogram ukryty do publikacji.
   supportAnnounced: true,    // sekcja Skytech, „Support” w pasku informacji, wykonawca w danych strukturalnych
   scheduleAnnounced: false,  // sekcja „Plan wieczoru” i link „Plan” w menu

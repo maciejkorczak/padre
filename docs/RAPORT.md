@@ -134,7 +134,7 @@ Jeden system ruchu, tylko `transform` i `opacity`, wszystko wyłączone przy `pr
 
 ## H. Testy
 
-**Automatyczne: `npm test` — 108/108 zaliczone** (Playwright, Chromium 141):
+**Automatyczne: `npm test` — 109/109 zaliczone** (Playwright, Chromium 141):
 - produkcyjny HTML: brak zakazanych sformułowań, brak notatek podglądu, brak linku do strony głównej eBilet, poprawne title, description, canonical, OG, JSON-LD;
 - desktop 1440: jeden H1, hierarchia nagłówków, 8 przycisków „Kup bilet” o jednej nazwie (+ link w stopce), brak poziomego przewijania, brak błędów w konsoli, wszystkie obrazy z `alt`;
 - lightbox: otwieranie, fokus, strzałki, zapętlenie, pułapka fokusu, ESC, powrót fokusu; gest przesunięcia na telefonie;
@@ -201,3 +201,10 @@ Na podstawie PDF z uwagami (wydruk thelastdaynight.thebooking.eu z 12.10.2026):
 - **Skytech wrócił** (`supportAnnounced: true`): sekcja Official support, „Support: Skytech” w pasku informacji, Skytech w danych strukturalnych. Nowe zdjęcia: portret na pomarańczowym tle i sylwetka na tle smugi światła. Zdjęcie na białym tle jest w `source/images/skytech-biale-tlo.jpg`, nieużyte (jasne tło odcina się od ciemnej strony).
 - Plan wieczoru nadal ukryty (godziny nie są komunikowane).
 - Poprawka przewijania na telefonie przy ograniczonym ruchu; komentarze szablonu usuwane z HTML.
+
+## Zmiany z 19.10.2026 (start strony)
+
+- **BIO Skytecha** z oficjalnego bio 2026: „Voodoo” z Martinem Garrixem i R3HAB-em, top 25 producentów 2025, wsparcie m.in. Davida Guetty, Tiësto, Aloka, Anymy i ARTBAT, występy na Tomorrowland i w Ushuaïa Ibiza.
+- **SEO bez zmian w wyglądzie:** nowy opis z frazą „ksiądz i DJ”, H1 z nazwą wydarzenia, dane strukturalne @graph (WebSite, WebPage, MusicEvent z ofertą „w sprzedaży”, Person ×2, Organization, FAQPage z 18 pytaniami), mapa witryny ze zdjęciami, dodatkowe tagi Open Graph i Twitter, obsługa meta tagów weryfikacji domeny.
+- **Wdrożenie:** `.htaccess` dla Apache/home.pl (HTTPS, bez www, AVIF/WOFF2, kompresja, cache) sprawdzony na lokalnym Apache 2.4; paczka `npm run dist`; instrukcja [WDROZENIE.md](WDROZENIE.md).
+- **Meta Pixel:** nie zainstalowany (nie otrzymaliśmy ID), gotowy do włączenia jednym wpisem.

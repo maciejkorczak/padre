@@ -34,6 +34,8 @@ npm run assets             # og-image.jpg i apple-touch-icon.png (wymaga uruchom
 npm test                   # testy funkcjonalne + zrzuty do docs/screenshots
 npm test -- --links        # dodatkowo sprawdza linki zewnętrzne
 npm run preview            # podgląd w formacie artefaktu claude.ai -> dist-preview/site
+npm run dist               # paczka do wgrania na serwer -> dist/padreguilherme.pl.zip
+npm run pdf                # PDF do prezentacji -> docs/Padre_Guilherme_Atlas_Arena_strona.pdf
 ```
 
 ## Podłączanie integracji
@@ -50,10 +52,11 @@ Wszystko w `assets/js/config.js`, potem `npm run html`:
 | `pressPackUrl` | Pokazuje przycisk „Pobierz press pack”. |
 | `newsletterEndpoint` | Pokazuje formularz „Bądź na bieżąco” (POST JSON `{ email, consent, source, campaign }`; sukces tylko przy odpowiedzi 2xx). |
 | `gtmId` albo `ga4Id`, `metaPixelId` | Włącza baner zgody i ładuje narzędzia dopiero po zgodzie. |
+| `googleSiteVerification`, `facebookDomainVerification` | Meta tagi weryfikacji domeny (Search Console, Meta Business). |
 
 ## Wdrożenie
 
-Strona nie jest nigdzie automatycznie publikowana. Przed wdrożeniem przejdź listę z `docs/DO-POTWIERDZENIA.md`.
+Strona nie jest nigdzie automatycznie publikowana. Instrukcja dla home.pl (DNS, SSL, wgranie, Search Console, piksel): [docs/WDROZENIE.md](docs/WDROZENIE.md). Paczka `npm run dist` zawiera gotowy `.htaccess` (HTTPS, bez www, typy plików, kompresja, cache).
 
 Zalecane nagłówki serwera (kompresja i cache). Przykład dla nginx:
 

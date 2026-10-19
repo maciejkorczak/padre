@@ -12,7 +12,8 @@
     "serve": "python3 -m http.server 8080",
     "test": "node scripts/test-site.mjs",
     "preview": "node scripts/build-preview.mjs",
-    "pdf": "node scripts/export-pdf.mjs"
+    "pdf": "node scripts/export-pdf.mjs",
+    "dist": "node scripts/build-dist.mjs"
   },
   "devDependencies": {
     "pdf-lib": "1.17.1",

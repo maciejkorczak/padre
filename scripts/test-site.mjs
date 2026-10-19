@@ -82,11 +82,14 @@ const banned = [/headline show/i, /pierwsz\w* (samodzieln\w* )?koncert/i, /bilet
 for (const re of banned) check(`Produkcja: brak „${re.source}”`, !re.test(html));
 check('Brak notatek „Do potwierdzenia” / „Do uzupełnienia” na stronie', !/do potwierdzenia|do uzupełnienia/i.test(html));
 check('Title zgodny z briefem', html.includes('<title>Padre Guilherme w Polsce 2027 | Atlas Arena Łódź | Bilety</title>'));
-check('Meta description (bez nazwy sprzedawcy biletów)', html.includes('content="Padre Guilherme wystąpi 14 lutego 2027 w Atlas Arenie w Łodzi. Sprawdź informacje o wydarzeniu i kup bilety."'));
+check('Meta description: ksiądz i DJ, Atlas Arena, Łódź, data, Skytech, bez nazwy sprzedawcy', /<meta name="description" content="Padre Guilherme, ksiądz i DJ z Portugalii, wystąpi 14 lutego 2027 w Atlas Arenie w Łodzi\. Support: Skytech\. [^"]{0,40}">/.test(html) && !/content="[^"]*eBilet/.test(html));
 check('Canonical, OG, Twitter, robots', ['rel="canonical"', 'property="og:image"', 'name="twitter:card"', 'name="robots"'].every((s) => html.includes(s)));
-const ld = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
-check('JSON-LD MusicEvent (startDate, location, performer, organizer, offers.url)', ld['@type'] === 'MusicEvent' && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 2 && ld.organizer?.name === 'Live2Listen' && ld.offers?.url === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme');
-check('JSON-LD bez niepotwierdzonych cen i dostępności', !JSON.stringify(ld).match(/price|availability/i));
+const ldAll = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+const byType = (t) => ldAll['@graph'].filter((g) => g['@type'] === t);
+const ld = byType('MusicEvent')[0];
+check('JSON-LD MusicEvent (startDate, location, performer ×2, organizer, offers.url, InStock)', ld && ld.startDate === '2027-02-14' && ld.location?.name === 'Atlas Arena' && ld.performer?.length === 2 && byType('Organization')[0]?.name === 'Live2Listen' && ld.offers?.url === 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme' && ld.offers?.availability === 'https://schema.org/InStock');
+check('JSON-LD: WebSite, WebPage, FAQPage; bez cen i nazwy sprzedawcy', ['WebSite', 'WebPage', 'FAQPage'].every((t) => byType(t).length === 1) && byType('FAQPage')[0].mainEntity.length >= 15 && !/price|ebilet/i.test(JSON.stringify(ldAll).replace(/https:\/\/www\.ebilet\.pl[^"]*/g, '')));
+check('H1 zawiera nazwę wydarzenia (tekst dla wyszukiwarek)', /<h1[^>]*>[\s\S]*?Padre Guilherme[\s\S]*?koncert w Atlas Arenie w Łodzi, 14 lutego 2027[\s\S]*?<\/h1>/.test(html));
 check('Brak sekcji „Polska już go zna” (usunięta decyzją zespołu)', !/Polska już go zna|id="polska"/.test(html));
 check('Brak godzin wydarzenia na stronie', !/\b(18|19|20|21):00\b/.test(html));
 check('Sekcja Skytech widoczna (support ogłoszony), „Plan wieczoru” ukryty', html.includes('id="support"') && html.includes('skytech-pomaranczowe') && !/Plan wieczoru|href="#plan"|data-support|data-schedule/.test(html));

@@ -114,29 +114,47 @@ const faq = `<div class="acc-group reveal" data-acc>
 
 const heroPreload = ['hero-m', 'hero'].map((n) => `<link rel="preload" as="image" type="image/avif" imagesrcset="${srcset(n, 'avif')}" imagesizes="100vw" media="${n === 'hero-m' ? '(max-width: 767px)' : '(min-width: 768px)'}" fetchpriority="high">`).join('\n');
 
-const jsonld = {
-  '@context': 'https://schema.org',
-  '@type': 'MusicEvent',
+// Dane strukturalne (@graph): strona, wydarzenie, wykonawcy, organizator i FAQ widoczne na stronie.
+const IMG = [`${SITE_URL}assets/og-image.jpg`, `${SITE_URL}assets/img/hero-1920.jpg`];
+const padre = {
+  '@type': 'Person', '@id': `${SITE_URL}#padre-guilherme`, name: 'Padre Guilherme', alternateName: 'Guilherme Peixoto',
+  description: 'Portugalski ksiądz, DJ i producent muzyki elektronicznej.', nationality: { '@type': 'Country', name: 'Portugalia' },
+  image: `${SITE_URL}assets/img/artysta-1024.jpg`, sameAs: SOCIAL.map((s) => s.href),
+};
+const skytech = { '@type': 'Person', '@id': `${SITE_URL}#skytech`, name: 'Skytech', description: 'Polski DJ i producent muzyki elektronicznej.', url: 'http://skytechmusic.com', image: `${SITE_URL}assets/img/skytech-pomaranczowe-800.jpg` };
+const organizer = {
+  '@type': 'Organization', '@id': `${SITE_URL}#live2listen`, name: 'Live2Listen', legalName: 'L2L sp. z o.o.', url: 'https://www.live2listen.com',
+  sameAs: ['https://www.facebook.com/live2listen/', 'https://www.instagram.com/live_2_listen/', 'https://www.tiktok.com/@live_2_listen'],
+};
+const event = {
+  '@type': 'MusicEvent', '@id': `${SITE_URL}#koncert`,
   name: 'Padre Guilherme — Love is My Religion | Atlas Arena, Łódź',
-  description: 'Koncert Padre Guilherme w Atlas Arenie w Łodzi.',
+  description: 'Koncert Padre Guilherme, księdza i DJ-a z Portugalii, w Atlas Arenie w Łodzi 14 lutego 2027.' + (config.supportAnnounced ? ' Support: Skytech.' : ''),
   startDate: '2027-02-14',
   eventStatus: 'https://schema.org/EventScheduled',
   eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  inLanguage: 'pl-PL',
   url: SITE_URL,
-  image: [`${SITE_URL}assets/og-image.jpg`, `${SITE_URL}assets/img/hero-1920.jpg`],
+  image: IMG,
   location: {
-    '@type': 'Place',
-    name: 'Atlas Arena',
-    address: { '@type': 'PostalAddress', streetAddress: 'al. Bandurskiego 7', postalCode: '94-020', addressLocality: 'Łódź', addressCountry: 'PL' },
+    '@type': 'Place', name: 'Atlas Arena', url: 'https://atlasarena.pl',
+    address: { '@type': 'PostalAddress', streetAddress: 'al. Bandurskiego 7', postalCode: '94-020', addressLocality: 'Łódź', addressRegion: 'łódzkie', addressCountry: 'PL' },
   },
-  performer: [
-    { '@type': 'Person', name: 'Padre Guilherme', sameAs: SOCIAL.map((s) => s.href) },
-    ...(config.supportAnnounced ? [{ '@type': 'Person', name: 'Skytech', url: 'http://skytechmusic.com' }] : []),
-  ],
-  organizer: { '@type': 'Organization', name: 'Live2Listen', url: 'https://www.live2listen.com' },
+  performer: [{ '@id': padre['@id'] }, ...(config.supportAnnounced ? [{ '@id': skytech['@id'] }] : [])],
+  organizer: { '@id': organizer['@id'] },
 };
-// Oferta tylko z potwierdzonym linkiem; bez ceny i dostępności (nie są potwierdzone).
-if (config.ticketUrl) jsonld.offers = { '@type': 'Offer', url: config.ticketUrl };
+// Oferta: tylko link i dostępność (sprzedaż od 13.10.2026). Bez cen i nazwy sprzedawcy.
+if (config.ticketUrl) event.offers = { '@type': 'Offer', url: config.ticketUrl, availability: 'https://schema.org/InStock', validFrom: '2026-10-13' };
+const plain = (q) => [...q.a, ...(q.list || []).map((t) => `– ${t}`), ...(q.contacts || []).map((c) => `${c.label}: ${c.email}`), ...(q.links || []).map((l) => `${l.label}: ${new URL(l.href, SITE_URL).href}`)].join(' ');
+const faqLd = { '@type': 'FAQPage', '@id': `${SITE_URL}#faq`, mainEntity: [...FAQ_MAIN, ...FAQ_MORE].map((q) => ({ '@type': 'Question', name: q.q, acceptedAnswer: { '@type': 'Answer', text: plain(q) } })) };
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', '@id': `${SITE_URL}#strona`, name: 'Padre Guilherme w Atlas Arenie', url: SITE_URL, inLanguage: 'pl-PL', publisher: { '@id': organizer['@id'] } },
+    { '@type': 'WebPage', '@id': `${SITE_URL}#witryna`, url: SITE_URL, name: 'Padre Guilherme w Polsce 2027 | Atlas Arena Łódź | Bilety', inLanguage: 'pl-PL', isPartOf: { '@id': `${SITE_URL}#strona` }, about: { '@id': event['@id'] }, primaryImageOfPage: IMG[0] },
+    event, padre, ...(config.supportAnnounced ? [skytech] : []), organizer, faqLd,
+  ],
+};
 
 let html = await readFile(path.join(root, 'src/index.html'), 'utf8');
 
@@ -150,6 +168,13 @@ html = html
   .replace('<!--pg:posters-->', posters)
   .replace('<!--pg:faq-->', faq)
   .replace(/<!--pg:icon-([a-z]+)-->/g, (_, n) => ICONS[n]);
+
+// Weryfikacja domeny w Google Search Console i Meta Business (jeśli podano w config.js).
+const verify = [
+  config.googleSiteVerification && `<meta name="google-site-verification" content="${esc(config.googleSiteVerification)}">`,
+  config.facebookDomainVerification && `<meta name="facebook-domain-verification" content="${esc(config.facebookDomainVerification)}">`,
+].filter(Boolean).join('\n');
+if (verify) html = html.replace('<link rel="icon"', `${verify}\n<link rel="icon"`);
 
 // Linki biletowe: konkretne wydarzenie w eBilet albo — gdy brak linku — sekcja #bilety.
 if (config.ticketUrl) {
