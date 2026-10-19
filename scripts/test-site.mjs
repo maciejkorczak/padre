@@ -100,7 +100,7 @@ check('Linki do regulaminu prowadzą do strony Live2Listen (bez PDF)', !/\.pdf/.
 check('Kontakt: formularz L2L i kinga@live2listen.com, bez adresów @padreguilherme.pl', html.includes('https://www.live2listen.com/#kontakt') && html.includes('kinga@live2listen.com') && !/@padreguilherme\.pl|hello@live2listen|lost@live2listen/.test(html));
 check('FAQ: kod kreskowy zamiast QR, bez pytań o odwołanie i zgubione rzeczy', !/QR|odwołania wydarzenia|Zgubiłem/.test(html) && html.includes('kodu kreskowego'));
 check('Końcowe CTA: „Bilety już w sprzedaży.”', html.includes('Bilety już w sprzedaży.'));
-check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includes('href="https://www.pressaccreditations.com/pl/live2listen/padreguilherme" target="_blank" rel="noopener" data-accreditation>'));
+check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy Live2Listen)', html.includes('href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener" data-accreditation>'));
 
 /* ===== 2. Desktop ===== */
 {
@@ -328,7 +328,7 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await page.click('[data-consent-open]'); await page.waitForTimeout(200);
   await page.check('[data-consent-analytics]'); await page.click('[data-consent-save]'); await page.waitForTimeout(500);
   check('Zgoda: tylko analityczne → GA4 tak, Meta Pixel nie', trackerHits.some((u) => u.includes('gtag/js')) && !trackerHits.some((u) => u.includes('facebook')));
-  check('Akredytacje: przycisk widoczny z adresem formularza', (await page.getAttribute('[data-accreditation]', 'href')).includes('pressaccreditations.com') && await page.locator('[data-accreditation]').isVisible());
+  check('Akredytacje: przycisk widoczny z adresem formularza', (await page.getAttribute('[data-accreditation]', 'href')) === 'https://www.live2listen.com/#kontakt' && await page.locator('[data-accreditation]').isVisible());
   check('Press pack: przycisk widoczny tylko z adresem', await page.locator('[data-presskit]').isVisible());
   // Newsletter: błąd backendu -> komunikat błędu, brak zdarzenia
   let status = 500;

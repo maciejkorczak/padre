@@ -2,7 +2,9 @@
 
 ## Stan obecny
 
-- **Meta Pixel `1732539551141809`** jest włączony (19.10.2026) i ładuje się dopiero po zgodzie marketingowej. GA4/GTM: brak identyfikatorów.
+- **Meta Pixel `1732539551141809`** jest włączony (19.10.2026) i ładuje się dopiero po zgodzie marketingowej.
+- **Google Analytics 4 `G-MQFK04FB3F`** (usługa „Padre Guilherme”) jest włączony (19.10.2026) i ładuje się dopiero po zgodzie na analitykę. GTM: nie używamy.
+- W GA4 warto dodać wymiar niestandardowy `cta_location` (Administracja → Definicje niestandardowe, zakres: zdarzenie) i oznaczyć `click_buy_ticket` jako zdarzenie kluczowe.
 - Kod pomiaru jest gotowy w `assets/js/main.js`. Zdarzenia trafiają do `window.dataLayer` (zwykła tablica w przeglądarce, bez wysyłki danych), dopóki nie zostanie wpisany identyfikator narzędzia **i** użytkownik nie wyrazi zgody.
 - Identyfikatory wpisuje się w `assets/js/config.js`: `gtmId` **albo** `ga4Id` (nie oba naraz) oraz opcjonalnie `metaPixelId`.
 
@@ -56,7 +58,7 @@ Przy `passUtmToTicketUrl: true` parametry `utm_*` z adresu strony są dopisywane
 ## Do zrobienia przed kampanią
 
 1. Ustalić, kto jest administratorem danych na padreguilherme.pl, i przygotować politykę prywatności (`privacyPolicyUrl`).
-2. Wpisać `gtmId` (zalecane) albo `ga4Id`. Meta Pixel jest już wpisany.
+2. ✅ GA4 i Meta Pixel są wpisane.
 3. W GTM: tagi GA4 i Meta z ustawieniami zgody; wyzwalacze na zdarzenia z tabeli.
 4. Zapytać eBilet o raportowanie sprzedaży wg UTM i o możliwość tagu konwersji.
 5. Po wdrożeniu: sprawdzić w trybie podglądu GTM / DebugView, czy zdarzenia przychodzą tylko po zgodzie.

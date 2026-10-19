@@ -49,6 +49,13 @@ Stan na 19.10.2026, po uruchomieniu strony.
 - Zdarzenia: `PageView` (po zgodzie), `ViewContent` (wejście w sekcję biletów), `ClickBuyTicket` (kliknięcie „Kup bilet”, z parametrem `cta_location`: hero, menu, bio, love, bilety, faq, final, sticky). Nie wysyłamy `InitiateCheckout` ani `Purchase`, żeby nie dublować zdarzeń eBilet.
 - **Sprawdzenie po starcie:** rozszerzenie Meta Pixel Helper (po kliknięciu „Akceptuję”) albo Menedżer zdarzeń → „Testowanie zdarzeń” → adres strony. Warto też zweryfikować domenę padreguilherme.pl w Meta Business (rekord TXT w DNS albo `facebookDomainVerification` w `config.js`).
 
+## 5a. Google Analytics 4
+
+- Usługa „Padre Guilherme”, identyfikator `G-MQFK04FB3F` (19.10.2026). Ładuje się dopiero po zgodzie na analitykę (Consent Mode v2, domyślnie „denied”).
+- Zdarzenia: `page_view` (automatycznie), `view_event` (sekcja biletów), `click_buy_ticket` z `cta_location`, `click_media`, `open_gallery`, `submit_accreditation`.
+- Nie wklejamy kodu z panelu Google do `index.html`: tag ładuje nasz skrypt po zgodzie. Dlatego narzędzie „Przetestuj instalację” w Google może nie wykryć tagu; sprawdzaj w raporcie Czas rzeczywisty albo DebugView po kliknięciu „Akceptuję”.
+- Zmiana identyfikatora tylko przez nową paczkę (`npm run dist`): `config.js` jest wersjonowany i przeglądarki trzymają go w pamięci.
+
 ## 6. Co jest skonfigurowane pod SEO i udostępnianie (bez zmian w wyglądzie)
 
 - Tytuł: „Padre Guilherme w Polsce 2027 | Atlas Arena Łódź | Bilety”.

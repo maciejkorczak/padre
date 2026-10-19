@@ -12,10 +12,10 @@ window.PADRE_CONFIG = {
   // Dopisuje utm_* z adresu strony do linku eBilet (atrybucja kampanii po stronie sprzedawcy).
   passUtmToTicketUrl: true,
 
-  // Press Accreditations (Live2Listen) — adres potwierdzony przez zespół projektu.
-  // 11.10.2026 strona jeszcze nie działała (certyfikat TLS nie pasuje do domeny, HTTP 404):
-  // przed publikacją sprawdź, czy formularz jest dostępny. accreditationReady: false ukrywa przycisk.
-  accreditationUrl: 'https://www.pressaccreditations.com/pl/live2listen/padreguilherme',
+  // Akredytacje: tymczasowo formularz kontaktowy Live2Listen (decyzja z 19.10.2026).
+  // Docelowo https://www.pressaccreditations.com/pl/live2listen/padreguilherme, gdy strona
+  // będzie miała certyfikat SSL i formularz (19.10: brak SSL, HTTP 404). accreditationReady: false ukrywa przycisk.
+  accreditationUrl: 'https://www.live2listen.com/#kontakt',
   accreditationReady: true,
 
   // Zatwierdzony press pack (PDF lub folder). Przycisk pojawi się dopiero po wpisaniu adresu.
@@ -28,7 +28,7 @@ window.PADRE_CONFIG = {
   // Analityka. Ładowana dopiero po zgodzie użytkownika (Consent Mode v2, domyślnie „denied”).
   // Wpisz GTM ALBO GA4 — nie oba naraz, żeby nie dublować pomiaru.
   gtmId: '',
-  ga4Id: '',
+  ga4Id: 'G-MQFK04FB3F', // Google Analytics 4: Padre Guilherme (ładuje się po zgodzie na analitykę)
   metaPixelId: '1732539551141809', // Meta Pixel (ten sam, który działa po stronie eBilet)
   privacyPolicyUrl: 'https://www.live2listen.com/prywatnosc',
 
