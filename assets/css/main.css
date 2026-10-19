@@ -291,7 +291,8 @@ code { font-size: 0.92em; }
 .viral__list { grid-auto-columns: 46%; }
 @media (min-width: 640px) { .viral__list { grid-auto-columns: 30%; } }
 @media (min-width: 1100px) { .viral__list { grid-auto-columns: calc((100% - 5 * 14px) / 6); } }
-.viral__card { display: block; text-decoration: none; color: var(--fg); }
+/* position: relative trzyma ukryte etykiety (.visually-hidden) wewnątrz przewijanej szyny. */
+.viral__card { position: relative; display: block; text-decoration: none; color: var(--fg); }
 .viral__thumb { position: relative; display: block; aspect-ratio: 9 / 16; border-radius: 12px; overflow: hidden; background: var(--surface); }
 .viral__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s var(--ease), filter 0.7s var(--ease); }
 .viral__card:hover .viral__thumb img, .viral__card:focus-visible .viral__thumb img { transform: scale(1.06); filter: brightness(1.08); }
@@ -389,7 +390,7 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 .posters__list { grid-auto-columns: 62%; }
 @media (min-width: 640px) { .posters__list { grid-auto-columns: 30%; } }
 @media (min-width: 1100px) { .posters__list { grid-auto-columns: calc((100% - 4 * 14px) / 5); } }
-.poster__card { display: block; text-decoration: none; color: var(--fg); }
+.poster__card { position: relative; display: block; text-decoration: none; color: var(--fg); }
 .poster__img { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--radius); background: var(--surface); }
 .poster__img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s var(--ease), filter 0.8s var(--ease); }
 .poster__card:hover .poster__img img, .poster__card:focus-visible .poster__img img { transform: scale(1.08); filter: brightness(1.08); }

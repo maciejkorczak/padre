@@ -213,7 +213,7 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' })); await page.waitForTimeout(600);
   check(`${label}: sticky CTA chowa się przy stopce`, !(await page.locator('[data-sticky-cta]').evaluate((e) => e.classList.contains('is-visible'))));
   await scrollThrough(page);
-  const ow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  const ow = await page.evaluate((w) => Math.max(document.documentElement.scrollWidth, window.innerWidth) - w, vp.width);
   check(`${label}: brak poziomego przewijania`, ow <= 0, `nadmiar ${ow}px`);
   const smallTargets = await page.$$eval('a, button', (els) => els.filter((e) => { const r = e.getBoundingClientRect(); return e.offsetParent && r.width > 0 && (r.height < 24 || r.width < 24) && !e.closest('p, dd, .faq__links, .faq__contacts'); }).map((e) => e.textContent.trim().slice(0, 30) || e.getAttribute('aria-label')));
   check(`${label}: cele dotykowe ≥ 24 px (WCAG 2.5.8)`, smallTargets.length === 0, smallTargets.slice(0, 5).join(' | '));
@@ -255,6 +255,13 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   const hidden = await page.$$eval('.reveal', (els) => els.filter((e) => getComputedStyle(e).opacity !== '1').length);
   check('Reduced motion: treść widoczna bez animacji wejścia', hidden === 0, `ukrytych: ${hidden}`);
   const plx = await page.$eval('.hero__media', (e) => e.style.transform);
+  const mob = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+  const mp = await mob.newPage();
+  await mp.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
+  await scrollThrough(mp);
+  const mw = await mp.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
+  check('Reduced motion na telefonie: brak poziomego przewijania i pomniejszenia strony', mw.sw <= 390 && mw.iw === 390, `scrollWidth ${mw.sw}, innerWidth ${mw.iw}`);
+  await mob.close();
   check('Reduced motion: paralaksa wyłączona', !plx);
   check('Reduced motion: konsola bez błędów', log.length === 0, log.join(' | '));
   await ctx.close();

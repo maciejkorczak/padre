@@ -11,9 +11,11 @@
     "build": "npm run images && npm run html && npm run assets",
     "serve": "python3 -m http.server 8080",
     "test": "node scripts/test-site.mjs",
-    "preview": "node scripts/build-preview.mjs"
+    "preview": "node scripts/build-preview.mjs",
+    "pdf": "node scripts/export-pdf.mjs"
   },
   "devDependencies": {
+    "pdf-lib": "1.17.1",
     "playwright": "1.56.1",
     "sharp": "0.33.5"
   }
