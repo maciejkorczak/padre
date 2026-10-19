@@ -41,6 +41,11 @@
   </If>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  # Przeglądarka zapamiętuje, że strona działa tylko po HTTPS (rok). Bez includeSubDomains.
+  Header always set Strict-Transport-Security "max-age=31536000"
+  # Strony nie da się osadzić w ramce na cudzej stronie (ochrona przed clickjackingiem).
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
 </IfModule>
 
 # Bez listowania katalogów i bez dostępu do plików ukrytych

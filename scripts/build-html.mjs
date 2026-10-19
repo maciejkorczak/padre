@@ -129,7 +129,7 @@ const padre = {
   description: 'Portugalski ksiądz, DJ i producent muzyki elektronicznej.', nationality: { '@type': 'Country', name: 'Portugalia' },
   image: `${SITE_URL}assets/img/artysta-1024.jpg`, sameAs: SOCIAL.map((s) => s.href),
 };
-const skytech = { '@type': 'Person', '@id': `${SITE_URL}#skytech`, name: 'Skytech', description: 'Polski DJ i producent muzyki elektronicznej.', url: 'http://skytechmusic.com', image: `${SITE_URL}assets/img/skytech-pomaranczowe-800.jpg` };
+const skytech = { '@type': 'Person', '@id': `${SITE_URL}#skytech`, name: 'Skytech', description: 'Polski DJ i producent muzyki elektronicznej.', url: 'https://skytechmusic.com', image: `${SITE_URL}assets/img/skytech-pomaranczowe-800.jpg` };
 const organizer = {
   '@type': 'Organization', '@id': `${SITE_URL}#live2listen`, name: 'Live2Listen', legalName: 'L2L sp. z o.o.', url: 'https://www.live2listen.com',
   sameAs: ['https://www.facebook.com/live2listen/', 'https://www.instagram.com/live_2_listen/', 'https://www.tiktok.com/@live_2_listen'],
