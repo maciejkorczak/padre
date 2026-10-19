@@ -1,43 +1,37 @@
 # Wdrożenie padreguilherme.pl
 
-Stan na 19.10.2026.
+Stan na 19.10.2026, po uruchomieniu strony.
 
-## 1. Stan domeny
+## 1. Stan (19.10.2026, 21:30): strona działa
 
 | Co | Stan |
 |----|------|
-| Domena padreguilherme.pl | Aktywna w home.pl (ważna do 4.09.2027), serwery nazw dns.home.pl. |
-| Rekord A (adres strony) | **Brak.** Domena nie jest jeszcze podłączona do żadnego serwera, dlatego strona się nie otwiera. |
-| Rekord MX (poczta) | Brak. Strona nie używa adresów @padreguilherme.pl, więc to nie blokuje startu. |
-| Wersja testowa | thelastdaynight.thebooking.eu to stary podgląd (bez poprawek z 18–19.10). Na domenę wgrywamy paczkę z punktu 3. |
+| Adres | **https://padreguilherme.pl** (www, http i /index.html przekierowują 301 na ten adres) |
+| DNS | A `46.242.241.87` (SERWER2670951), `www` → CNAME na domenę główną, TTL 60 s. Potwierdzone w Google DNS i Cloudflare. |
+| Certyfikat | homeSSL (home.pl) dla padreguilherme.pl i www, ważny do 22.03.2027, odnawiany w ramach subskrypcji do 5.09.2027. |
+| Serwer | SERWER2670951, Ustawienia WWW: „Główny katalog na serwerze”. Strona leży bezpośrednio w `/`. |
+| Inne foldery w `/` | `ebiletconfidential` (strona Press Accreditations) i `tmp` (systemowy): nie usuwać. `ebiletconfidential` otwiera się też pod padreguilherme.pl/ebiletconfidential/. |
+| WAF | Wyłączony (strona statyczna, bez PHP i bazy). |
 
-## 2. Podłączenie domeny w home.pl (DNS)
+## 2. Dostęp FTP
 
-Domena korzysta z DNS home.pl, więc rekordy ustawią się same po podłączeniu domeny do serwera.
+- Serwer `serwer2670951.hosting-home.pl`, port 21 (FTPS), login `padre@padreguilherme.pl` (małymi literami).
+- Konto widzi katalog główny `/` serwera, czyli katalog strony.
+- Menedżer plików home.pl (WebFTP) pokazuje osobne drzewo z folderem `/padreguilherme` z pierwszej próby („podkatalog z separacją”). Ten folder nie jest używany przez domenę.
 
-1. Panel home.pl → **Usługi WWW** → wybierz serwer. Najprościej pusty **SERWER2670951** („Domeny: brak”). Może też być SERWER2602341, na którym jest wersja testowa.
-2. **Opcje** → podłącz / dodaj domenę → wpisz `padreguilherme.pl`. Dodaj też `www.padreguilherme.pl`.
-3. Jako katalog wskaż nowy folder, np. `/padreguilherme.pl`.
-4. Włącz bezpłatny **certyfikat SSL** dla `padreguilherme.pl` i `www.padreguilherme.pl`. Bez niego nie zadziała HTTPS.
-5. Czas propagacji: zwykle kilkanaście minut, najwyżej ok. godziny (wcześniej nie było rekordu A, więc nic nie trzeba „przeczekiwać” w cache). U części dostawców internetu może to potrwać do 24 h.
+## 3. Aktualizacja strony
 
-Po podłączeniu daj znać. Sprawdzę z zewnątrz DNS, HTTPS, przekierowania i nagłówki, a potem puszczę testy na żywej stronie.
+1. `npm run dist` → `dist/padreguilherme.pl.zip` (201 plików, ok. 12 MB).
+2. Rozpakuj i wgraj **zawartość** do `/` przez FileZillę, z nadpisaniem. Nie ruszaj `ebiletconfidential` ani `tmp`.
+3. `.htaccess` jest w paczce (plik ukryty). Na Macu: w Finderze Cmd+Shift+. pokazuje ukryte pliki.
 
-## 3. Wgranie plików
-
-1. Rozpakuj `padreguilherme.pl.zip` (tworzy go `npm run dist`; 201 plików, ok. 12 MB).
-2. Przez FTP/FTPS wgraj **zawartość** paczki do katalogu domeny z punktu 2 (tak, żeby `index.html` był bezpośrednio w katalogu).
-3. Wgraj też plik ukryty **`.htaccess`**. Część programów FTP domyślnie go nie pokazuje.
-
-`.htaccess` (sprawdzony na Apache 2.4):
-- przekierowuje `http://` i `www.` na `https://padreguilherme.pl/` (301, jeden adres dla Google),
+`.htaccess` (sprawdzony na Apache 2.4 i na żywym serwerze):
+- przekierowuje `http://` i `www.` na `https://padreguilherme.pl/` (301, parametry UTM zostają),
 - przekierowuje `/index.html` na `/`,
-- ustawia typy plików AVIF i WOFF2 (wersja testowa na home.pl wysyłała AVIF bez typu),
-- kompresuje pliki tekstowe i ustawia długi cache dla zdjęć, CSS i JS (pliki są wersjonowane),
+- ustawia typy plików AVIF i WOFF2,
+- kompresuje pliki tekstowe (gzip),
+- długi cache tylko dla `/assets/` (pliki są wersjonowane), strona główna zawsze świeża; inne foldery na serwerze zostają bez zmian,
 - blokuje listowanie katalogów i dostęp do plików ukrytych.
-
-Przekierowania działają tylko dla padreguilherme.pl, więc ta sama paczka może leżeć na adresie testowym.
-Jeśli po wgraniu strona zapętla się na przekierowaniu, usuń z `.htaccess` blok z `X-Forwarded-Proto` i włącz w panelu home.pl opcję wymuszania HTTPS.
 
 ## 4. Po starcie (SEO)
 
