@@ -29,7 +29,7 @@ window.PADRE_CONFIG = {
   // Wpisz GTM ALBO GA4 — nie oba naraz, żeby nie dublować pomiaru.
   gtmId: '',
   ga4Id: '',
-  metaPixelId: '',
+  metaPixelId: '1732539551141809', // Meta Pixel (ten sam, który działa po stronie eBilet)
   privacyPolicyUrl: 'https://www.live2listen.com/prywatnosc',
 
   // Weryfikacja domeny (opcjonalnie; alternatywa: rekord TXT w DNS home.pl).

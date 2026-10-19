@@ -49,11 +49,11 @@ Jeśli po wgraniu strona zapętla się na przekierowaniu, usuń z `.htaccess` bl
 
 ## 5. Meta Pixel
 
-- **Piksel nie jest zainstalowany.** W rozmowie nie dotarło ID piksela, a wersja testowa ma puste `metaPixelId`.
-- Wystarczy ID piksela (sam numer z Menedżera zdarzeń, 15–16 cyfr). Wpisuję je w `config.js` → `metaPixelId`, przebudowuję i podmieniam paczkę.
-- Zgodnie z RODO piksel ładuje się dopiero po zgodzie na cookies marketingowe, więc po wpisaniu ID na stronie pojawi się baner zgody (jedyna widoczna zmiana).
-- Zdarzenia: `PageView`, `ViewContent` (wejście w sekcję biletów), `ClickBuyTicket` (kliknięcie „Kup bilet”, z miejscem przycisku). Zakupów piksel nie widzi, bo odbywają się na stronie sprzedawcy.
-- **Weryfikacja:** rozszerzenie Meta Pixel Helper albo Menedżer zdarzeń → „Testowanie zdarzeń”. Po starcie domeny warto zweryfikować domenę w Meta Business (TXT w DNS albo `facebookDomainVerification` w `config.js`).
+- **Zainstalowany (19.10.2026):** piksel `1732539551141809`, ten sam, który działa po stronie eBilet. Zakupy raportuje eBilet, strona raportuje ruch i kliknięcia.
+- Zgodnie z RODO piksel ładuje się dopiero po zgodzie na cookies marketingowe. Przy pierwszej wizycie widać kompaktowy baner („Akceptuję” / „Tylko niezbędne” / „Ustawienia”), a w stopce link „Ustawienia cookies”.
+- Kod jest wpięty w nasz skrypt (`config.js` → `metaPixelId`), a nie wklejony jako osobny snippet. Pomijamy część `<noscript>` z obrazkiem, bo wysyłałaby PageView bez zgody.
+- Zdarzenia: `PageView` (po zgodzie), `ViewContent` (wejście w sekcję biletów), `ClickBuyTicket` (kliknięcie „Kup bilet”, z parametrem `cta_location`: hero, menu, bio, love, bilety, faq, final, sticky). Nie wysyłamy `InitiateCheckout` ani `Purchase`, żeby nie dublować zdarzeń eBilet.
+- **Sprawdzenie po starcie:** rozszerzenie Meta Pixel Helper (po kliknięciu „Akceptuję”) albo Menedżer zdarzeń → „Testowanie zdarzeń” → adres strony. Warto też zweryfikować domenę padreguilherme.pl w Meta Business (rekord TXT w DNS albo `facebookDomainVerification` w `config.js`).
 
 ## 6. Co jest skonfigurowane pod SEO i udostępnianie (bez zmian w wyglądzie)
 

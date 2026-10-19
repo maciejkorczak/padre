@@ -42,6 +42,8 @@ if (SHOTS) await mkdir(SHOT_DIR, { recursive: true });
 
 async function open(viewport, opts = {}) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: opts.dpr || 1, isMobile: !!opts.mobile, hasTouch: !!opts.mobile, reducedMotion: opts.reduced ? 'reduce' : 'no-preference' });
+  // Domyślnie zapisana odmowa zgody (baner nie zasłania strony). Testy zgody używają freshConsent.
+  if (!opts.freshConsent) await ctx.addInitScript(() => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: false, marketing: false, ts: 1 })); } catch (e) {} });
   if (opts.init) await ctx.addInitScript(opts.init);
   const page = await ctx.newPage();
   const log = [];
@@ -180,7 +182,7 @@ check('Akredytacje: przycisk z adresem Press Accreditations w HTML', html.includ
   check('Pomiar: kliknięcie CTA nie jest raportowane jako zakup', !ev2.some((e) => /purchase/i.test(e.event)));
   check('Akredytacje: przycisk „Złóż wniosek o akredytację” widoczny', await page.locator('[data-accreditation]').isVisible() && !(await page.locator('[data-accreditation-pending]').count()));
   check('Press pack: brak przycisku bez zatwierdzonego pliku', !(await page.locator('[data-presskit]').isVisible()));
-  check('Brak trackerów bez konfiguracji', trackerHits.length === 0 && !(await page.locator('[data-consent]').isVisible()));
+  check('Brak trackerów bez zgody (zapisana odmowa)', trackerHits.length === 0 && !(await page.locator('[data-consent]').isVisible()));
   // Klawiatura (świeże załadowanie strony)
   await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
   await page.keyboard.press('Tab');
@@ -281,12 +283,39 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await ctx.close();
 }
 
+/* ===== 6b. Meta Pixel (konfiguracja produkcyjna) ===== */
+{
+  const { ctx, page, log, trackerHits } = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
+  await page.waitForTimeout(500);
+  check('Pixel: baner zgody widoczny przy pierwszej wizycie', await page.locator('[data-consent]').isVisible());
+  check('Pixel: brak żądań do Meta przed zgodą', !trackerHits.some((u) => /facebook/.test(u)) && !(await page.evaluate(() => typeof window.fbq === 'function')));
+  if (SHOTS) await shot(page, 'po-mobile-zgoda');
+  await page.click('[data-consent-accept]'); await page.waitForTimeout(400);
+  const q = await page.evaluate(() => (window.fbq && window.fbq.queue || []).map((a) => [...a]));
+  check('Pixel: po zgodzie ładuje fbevents.js i inicjuje ID 1732539551141809 + PageView', trackerHits.some((u) => u.includes('connect.facebook.net/en_US/fbevents.js')) && q.some((a) => a[0] === 'init' && a[1] === '1732539551141809') && q.some((a) => a[0] === 'track' && a[1] === 'PageView'), JSON.stringify(q.slice(0, 3)));
+  check('Pixel: baner znika, w stopce jest „Ustawienia cookies”', !(await page.locator('[data-consent]').isVisible()) && (await page.locator('[data-consent-open]').count()) === 1);
+  await page.evaluate(() => document.addEventListener('click', (e) => e.preventDefault()));
+  await page.click('[data-ticket="hero"]');
+  const q2 = await page.evaluate(() => (window.fbq && window.fbq.queue || []).map((a) => [...a]));
+  check('Pixel: kliknięcie „Kup bilet” → ClickBuyTicket (bez Purchase)', q2.some((a) => a[0] === 'trackCustom' && a[1] === 'ClickBuyTicket' && a[2].cta_location === 'hero') && !q2.some((a) => a[1] === 'Purchase'));
+  await page.evaluate(() => document.getElementById('bilety').scrollIntoView({ behavior: 'instant' })); await page.waitForTimeout(600);
+  const q3 = await page.evaluate(() => (window.fbq && window.fbq.queue || []).map((a) => [...a]));
+  check('Pixel: wejście w sekcję biletów → ViewContent', q3.some((a) => a[0] === 'track' && a[1] === 'ViewContent'));
+  check('Pixel: konsola bez błędów (poza zablokowanym w teście skryptem Meta)', log.filter((l) => !/Failed to load resource/.test(l)).length === 0, log.join(' | '));
+  await ctx.close();
+  const c2 = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
+  await c2.page.click('[data-consent-reject]'); await c2.page.waitForTimeout(300);
+  await c2.page.reload({ waitUntil: 'networkidle' });
+  check('Pixel: „Tylko niezbędne” → brak Meta także po odświeżeniu', !c2.trackerHits.some((u) => /facebook/.test(u)) && !(await c2.page.locator('[data-consent]').isVisible()));
+  await c2.ctx.close();
+}
+
 /* ===== 7. Integracje włączone konfiguracją (symulacja) ===== */
 {
   const init = () => {
     window.PADRE_CONFIG_OVERRIDE = { ticketUrl: 'https://www.ebilet.pl/muzyka/test-padre-guilherme', ga4Id: 'G-TEST000', metaPixelId: '000000000', accreditationReady: true, pressPackUrl: 'https://example.com/presspack.pdf', newsletterEndpoint: 'https://newsletter.example.test/subscribe' };
   };
-  const { ctx, page, log, trackerHits } = await open({ width: 1440, height: 900 }, { init, query: 'index.html?utm_source=instagram&utm_medium=story&utm_campaign=padre_lodz' });
+  const { ctx, page, log, trackerHits } = await open({ width: 1440, height: 900 }, { init, freshConsent: true, query: 'index.html?utm_source=instagram&utm_medium=story&utm_campaign=padre_lodz' });
   const hrefs = await page.$$eval('[data-ticket]', (els) => els.map((a) => a.href));
   check('Konfiguracja: CTA prowadzą do konkretnego wydarzenia eBilet + UTM', hrefs.every((h) => h.startsWith('https://www.ebilet.pl/muzyka/test-padre-guilherme?') && h.includes('utm_source=instagram') && h.includes('utm_campaign=padre_lodz')));
   check('Konfiguracja: CTA otwierają nową kartę', (await page.$$eval('[data-ticket]', (els) => els.every((a) => a.target === '_blank' && a.rel.includes('noopener')))));

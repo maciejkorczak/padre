@@ -599,7 +599,10 @@ a:hover .play, a:focus-visible .play { background: var(--accent); color: var(--i
 .consent__title { font-size: 1.0625rem; color: var(--fg); }
 .consent p { margin-top: 8px; }
 .consent__opts { margin-top: 8px; }
-.consent__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.consent__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 14px; }
+.consent__actions .btn { padding: 0 16px; letter-spacing: 0.08em; }
+.consent__more { min-height: 44px; padding: 0 6px; font-size: 0.875rem; color: var(--fg-2); }
+@media (max-width: 480px) { .consent { padding: 16px 18px; } .consent__actions .btn { flex: 1 1 auto; } }
 
 /* ==== Ograniczony ruch ==== */
 @media (prefers-reduced-motion: reduce) {

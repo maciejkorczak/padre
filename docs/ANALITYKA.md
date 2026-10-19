@@ -2,7 +2,7 @@
 
 ## Stan obecny
 
-- Na stronie **nie ma żadnych trackerów**: nie było ich też w poprzedniej wersji, więc nic się nie dubluje.
+- **Meta Pixel `1732539551141809`** jest włączony (19.10.2026) i ładuje się dopiero po zgodzie marketingowej. GA4/GTM: brak identyfikatorów.
 - Kod pomiaru jest gotowy w `assets/js/main.js`. Zdarzenia trafiają do `window.dataLayer` (zwykła tablica w przeglądarce, bez wysyłki danych), dopóki nie zostanie wpisany identyfikator narzędzia **i** użytkownik nie wyrazi zgody.
 - Identyfikatory wpisuje się w `assets/js/config.js`: `gtmId` **albo** `ga4Id` (nie oba naraz) oraz opcjonalnie `metaPixelId`.
 

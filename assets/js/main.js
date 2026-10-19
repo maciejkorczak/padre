@@ -138,7 +138,7 @@
     if (section && 'IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
         if (entries.some(function (e) { return e.isIntersecting; })) { track('view_event', { section: 'bilety' }); io.disconnect(); }
-      }, { threshold: 0.3 });
+      }, { rootMargin: '-35% 0px -35% 0px' }); // sekcja dochodzi do środka ekranu — działa przy każdej wysokości sekcji
       io.observe(section);
     }
   }

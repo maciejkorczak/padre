@@ -37,6 +37,9 @@ for (const f of used) {
   await mkdir(path.dirname(path.join(out, f)), { recursive: true });
   await copyFile(path.join(root, f), path.join(out, f));
 }
+// Podgląd nie wysyła danych do piksela (inna domena; CSP podglądu i tak blokuje skrypt Meta).
+const cfgPath = path.join(out, 'assets/js/config.js');
+await writeFile(cfgPath, (await readFile(cfgPath, 'utf8')).replace(/metaPixelId: '[^']*'/, "metaPixelId: ''"));
 // CSS bez @font-face (w podglądzie fonty idą z Google Fonts).
 const css = (await readFile(path.join(root, 'assets/css/main.css'), 'utf8')).replace(/\/\* ==== Fonty[\s\S]*?(?=\/\* ==== Tokeny)/, '');
 await mkdir(path.join(out, 'assets/css'), { recursive: true });

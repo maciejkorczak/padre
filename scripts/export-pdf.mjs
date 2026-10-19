@@ -30,6 +30,8 @@ const browser = await chromium.launch();
 
 // Strona gotowa do zrzutu: wszystkie zdjęcia pobrane, bez animacji wejścia i paralaksy.
 async function prepare(page) {
+  // Zapisana decyzja o cookies: baner nie zasłania zrzutów.
+  await page.addInitScript(() => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: false, marketing: false, ts: 1 })); } catch (e) {} });
   await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; });
