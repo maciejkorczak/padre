@@ -1,4 +1,4 @@
-// Treści powtarzalnych bloków strony. Każda liczba i link ma źródło — patrz docs/RAPORT.md.
+// Treści powtarzalnych bloków strony. Każda liczba i link ma źródło - patrz docs/RAPORT.md.
 
 export const SOCIAL = [
   { label: 'Instagram', href: 'https://www.instagram.com/padre.guilherme/', icon: 'instagram' },
@@ -45,7 +45,7 @@ export const POSTERS = [
 
 const REGULAMIN = { href: 'https://www.live2listen.com/regulamin', label: 'Regulamin wydarzeń Live2Listen' };
 const FORMULARZ = { href: 'https://www.live2listen.com/#kontakt', label: 'Formularz kontaktowy Live2Listen' };
-const ODSPRZEDAZ = 'Bilety na wydarzenia Live2Listen nie podlegają standardowemu zwrotowi, z wyjątkiem przypadków przewidzianych w przepisach prawa lub regulaminie sprzedaży. Jeśli nie możesz przyjść, skorzystaj z oficjalnej odsprzedaży biletów — będzie dostępna najpóźniej tydzień przed koncertem.';
+const ODSPRZEDAZ = 'Bilety na wydarzenia Live2Listen nie podlegają standardowemu zwrotowi, z wyjątkiem przypadków przewidzianych w przepisach prawa lub regulaminie sprzedaży. Jeśli nie możesz przyjść, skorzystaj z oficjalnej odsprzedaży biletów - będzie dostępna najpóźniej tydzień przed koncertem.';
 
 // Pytania w kolejności z briefu. Pytania o miejsca siedzące i bilety VIP dodamy,
 // gdy organizator potwierdzi odpowiedzi (nie publikujemy pustych odpowiedzi).
@@ -53,14 +53,14 @@ export const FAQ_MAIN = [
   { q: 'Gdzie kupić bilety?', a: ['Bilety można zakupić wyłącznie, korzystając z linków zawartych na tej stronie. Bilety zakupione z innych źródeł mogą okazać się nieważne, a bilet nabyty z naruszeniem regulaminu może zostać unieważniony przez organizatora.'], ticket: true },
   { q: 'Kiedy i gdzie odbędzie się koncert?', a: ['W niedzielę 14 lutego 2027 roku w Atlas Arenie w Łodzi, al. Bandurskiego 7.'] },
   { q: 'O której godzinie rozpocznie się wydarzenie?', a: ['Harmonogram wydarzenia zostanie opublikowany i przesłany do nabywców biletów na kilka dni przed wydarzeniem.'] },
-  { q: 'Jak dojechać do Atlas Areny?', a: ['Atlas Arena znajduje się przy al. Bandurskiego 7 w Łodzi. Organizator zachęca do korzystania z komunikacji miejskiej lub taxi — oszczędzisz czas na szukaniu miejsca parkingowego.'], links: [{ href: 'https://atlasarena.pl', label: 'Dojazd i parkingi: atlasarena.pl', external: true }] },
+  { q: 'Jak dojechać do Atlas Areny?', a: ['Atlas Arena znajduje się przy al. Bandurskiego 7 w Łodzi. Organizator zachęca do korzystania z komunikacji miejskiej lub taxi - oszczędzisz czas na szukaniu miejsca parkingowego.'], links: [{ href: 'https://atlasarena.pl', label: 'Dojazd i parkingi: atlasarena.pl', external: true }] },
   { q: 'Czy osoby niepełnoletnie mogą uczestniczyć?', a: [
     'Tak. Osoby, które ukończyły 16 lat, mogą wejść samodzielnie z ważnym biletem i dokumentem potwierdzającym wiek. Brak dokumentu oznacza odmowę wstępu bez opiekuna.',
     'Osoby poniżej 16 lat mogą uczestniczyć w koncercie wyłącznie pod opieką osoby dorosłej i na jej odpowiedzialność. Bilet jest potrzebny zarówno dla dziecka, jak i dla opiekuna, a opiekun musi mieć wypełnione oświadczenie opiekuna małoletniego. Jedna osoba dorosła może być opiekunem maksymalnie pięciorga niepełnoletnich.',
     'Dzieci, które w dniu koncertu nie mają ukończonych 3 lat, wchodzą bezpłatnie. Zabierz dokument potwierdzający ich wiek i słuchawki ochronne.'], links: [REGULAMIN] },
   { q: 'Jak wygląda dostępność dla osób z niepełnosprawnościami?', a: [
     'Jeśli osoba z niepełnosprawnością przychodzi z opiekunem, bilet potrzebny jest dla każdej z tych osób.',
-    'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet — obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'] },
+    'Jeśli na planie sali nie ma oznaczonych miejsc dla osób poruszających się na wózkach, kup dowolny bilet - obsługa na miejscu wskaże bezpieczne miejsca przygotowane dla osób z niepełnosprawnościami. Jeśli potrzebujesz dodatkowego wsparcia, zgłoś się do obsługi widowni.'] },
   { q: 'Czy bilety można przekazać innej osobie?', a: ['Tak, bilet możesz przekazać innej osobie w aplikacji, w której go kupiono.', ODSPRZEDAZ] },
   { q: 'Jak skontaktować się z organizatorem?', a: [
     'Organizatorem koncertu jest Live2Listen (L2L sp. z o.o.). Napisz przez formularz kontaktowy na stronie Live2Listen. W sprawach zakupu biletu, braku biletu w e-mailu lub kodu kreskowego kontaktuj się z obsługą klienta serwisu, w którym kupiono bilet.'], contacts: [
@@ -85,7 +85,7 @@ export const FAQ_MORE = [
     'dużych plecaków i toreb większych niż 11,4 × 16,51 cm',
     'niebezpiecznych przedmiotów, w tym broni, petard i rac',
     'alkoholu i środków odurzających'], links: [REGULAMIN] },
-  { q: 'Czy mogę robić zdjęcia i nagrywać filmy?', a: ['Tak, wyłącznie do użytku prywatnego i telefonem lub aparatem bez profesjonalnych funkcji. Organizator może wprowadzić dodatkowe zasady — poinformuje o nich na tej stronie.'] },
+  { q: 'Czy mogę robić zdjęcia i nagrywać filmy?', a: ['Tak, wyłącznie do użytku prywatnego i telefonem lub aparatem bez profesjonalnych funkcji. Organizator może wprowadzić dodatkowe zasady - poinformuje o nich na tej stronie.'] },
   { q: 'Czy mogę wyjść i wrócić?', a: ['Nie. Ponowne wejście po opuszczeniu terenu imprezy wymaga nowego biletu.'] },
   { q: 'Czy będzie szatnia?', a: ['Informacje o szatni znajdziesz na stronie Atlas Areny. Przechowanie odzieży wierzchniej jest płatne.'] },
   { q: 'Czy mogę przyjść ze zwierzęciem?', a: ['Nie. Ze względów bezpieczeństwa na wydarzenia Live2Listen nie można wprowadzać zwierząt.'] },

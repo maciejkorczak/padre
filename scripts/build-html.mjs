@@ -127,7 +127,7 @@ const organizer = {
 };
 const event = {
   '@type': 'MusicEvent', '@id': `${SITE_URL}#koncert`,
-  name: 'Padre Guilherme — Love is My Religion | Atlas Arena, Łódź',
+  name: 'Padre Guilherme - Love is My Religion | Atlas Arena, Łódź',
   description: 'Koncert Padre Guilherme, księdza i DJ-a z Portugalii, w Atlas Arenie w Łodzi 14 lutego 2027.' + (config.supportAnnounced ? ' Support: Skytech.' : ''),
   startDate: '2027-02-14',
   eventStatus: 'https://schema.org/EventScheduled',
@@ -144,7 +144,7 @@ const event = {
 };
 // Oferta: tylko link i dostępność (sprzedaż od 13.10.2026). Bez cen i nazwy sprzedawcy.
 if (config.ticketUrl) event.offers = { '@type': 'Offer', url: config.ticketUrl, availability: 'https://schema.org/InStock', validFrom: '2026-10-13' };
-const plain = (q) => [...q.a, ...(q.list || []).map((t) => `– ${t}`), ...(q.contacts || []).map((c) => `${c.label}: ${c.email}`), ...(q.links || []).map((l) => `${l.label}: ${new URL(l.href, SITE_URL).href}`)].join(' ');
+const plain = (q) => [...q.a, ...(q.list || []).map((t) => `- ${t}`), ...(q.contacts || []).map((c) => `${c.label}: ${c.email}`), ...(q.links || []).map((l) => `${l.label}: ${new URL(l.href, SITE_URL).href}`)].join(' ');
 const faqLd = { '@type': 'FAQPage', '@id': `${SITE_URL}#faq`, mainEntity: [...FAQ_MAIN, ...FAQ_MORE].map((q) => ({ '@type': 'Question', name: q.q, acceptedAnswer: { '@type': 'Answer', text: plain(q) } })) };
 const jsonld = {
   '@context': 'https://schema.org',
