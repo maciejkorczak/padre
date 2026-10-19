@@ -28,7 +28,8 @@ export const GALLERY = [
   { img: 'galeria-04', layout: 'third', caption: 'Widok z góry na scenę i publiczność w hali', sizes: '(min-width: 960px) 32vw, 50vw' },
 ];
 
-// Plakaty z linkami do stron wydarzeń (zweryfikowane w poprzednich iteracjach).
+// Plakaty jako portfolio artysty. href to źródło plakatu; na stronie nie linkujemy,
+// żeby nie odsyłać ludzi do sprzedaży biletów na inne wydarzenia.
 export const POSTERS = [
   { img: 'plakat-01', title: 'Afterlife', where: 'Hï Ibiza', href: 'https://www.after.life/ibiza24', alt: 'Plakat Afterlife w Hï Ibiza z Padre Guilherme w składzie' },
   { img: 'plakat-02', title: 'Medusa Festival', where: 'Hiszpania', href: 'https://medusasunbeach.com', alt: 'Plakat: Padre Guilherme na Medusa Festival' },

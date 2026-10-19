@@ -84,11 +84,10 @@ const gallery = GALLERY.map((g, i) => {
 }).join('\n      ');
 
 const posters = POSTERS.map((p, i) => `<li class="poster reveal" style="--i:${i % 5}">
-        <a class="poster__card" href="${esc(p.href)}" target="_blank" rel="noopener" data-media="plakat-${esc(p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}">
+        <div class="poster__card">
           <span class="poster__img">${picture({ name: p.img, sizes: '(min-width: 1200px) 230px, (min-width: 768px) 28vw, 62vw', alt: p.alt })}</span>
           <span class="poster__meta"><span class="poster__title">${esc(p.title)}</span><span class="poster__where">${esc(p.where)}</span></span>
-          <span class="visually-hidden">(otwiera się w nowej karcie)</span>
-        </a>
+        </div>
       </li>`).join('\n      ');
 
 function faqItem(item, id) {
