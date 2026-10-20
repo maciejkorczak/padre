@@ -9,7 +9,7 @@
 
   var mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   var mqMotionDesktop = window.matchMedia('(min-width: 960px) and (hover: hover) and (pointer: fine)');
-  var mqMobile = window.matchMedia('(max-width: 767px)');
+  var mqMobile = window.matchMedia('(max-width: 767px) and (min-height: 421px)'); // jak w CSS paska z „Kup bilet”
   var reduced = mqReduced.matches;
   if (reduced) root.classList.add('no-anim');
 
@@ -73,7 +73,7 @@
       loaded.ga4 = true;
       loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(cfg.ga4Id));
       window.gtag('js', new Date());
-      window.gtag('config', cfg.ga4Id, { send_page_view: true, cookie_flags: 'secure;samesite=lax' });
+      window.gtag('config', cfg.ga4Id, { send_page_view: true, cookie_flags: 'secure;samesite=lax', cookie_expires: 34128000 }); // 395 dni
     }
     if (c.marketing && cfg.metaPixelId && !loaded.meta) {
       loaded.meta = true;
@@ -88,7 +88,9 @@
   var CONSENT_V = 1, CONSENT_TTL = 365 * 864e5;
   function readConsent() {
     var c = store.get('pg_consent');
-    return c && c.v === CONSENT_V && Date.now() - c.ts < CONSENT_TTL ? c : null;
+    if (!c || c.v !== CONSENT_V) return null;
+    var age = Date.now() - c.ts; // zapis „z przyszłości” (zegar był przestawiony) też wygasa; dzień tolerancji
+    return age > -864e5 && age < CONSENT_TTL ? c : null;
   }
   function expireCookies(names) {
     var host = location.hostname.replace(/^www\./, '');
@@ -151,6 +153,13 @@
     var reopen = $('[data-consent-open]');
     if (reopen) { reopen.hidden = false; reopen.addEventListener('click', function () { opener = reopen; open(true); cbA.focus(); }); }
     window.addEventListener('resize', function () { if (!box.hidden) reserve(true); });
+    box.addEventListener('keydown', function (e) {
+      if (!opener) return;
+      if (e.key === 'Escape') { e.preventDefault(); box.hidden = true; reserve(false); var o = opener; opener = null; o.focus(); return; }
+      if (e.key !== 'Tab') return;
+      var f = $$('input:not([disabled]), button, a[href]', box).filter(function (el) { return el.offsetParent !== null; });
+      if ((!e.shiftKey && doc.activeElement === f[f.length - 1]) || (e.shiftKey && doc.activeElement === f[0])) { e.preventDefault(); opener.focus(); }
+    });
     var saved = readConsent();
     if (saved) applyConsent(saved); else open(false);
   }
@@ -176,6 +185,7 @@
         if (!$('.visually-hidden', a)) a.insertAdjacentHTML('beforeend', '<span class="visually-hidden"> (sprzedaż biletów, otwiera się w nowej karcie)</span>');
       } else {
         a.setAttribute('href', '#bilety'); a.removeAttribute('target');
+        var hint = $('.visually-hidden', a); if (hint) hint.remove();
       }
       a.addEventListener('click', function () {
         track('click_buy_ticket', { cta_location: a.getAttribute('data-ticket'), ticket_url_ready: !!href, link_url: href || '#bilety' });
@@ -226,7 +236,7 @@
         else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     });
-    window.matchMedia('(min-width: 1024px)').addEventListener('change', function (e) { if (e.matches) setOpen(false); });
+    window.matchMedia('(min-width: 1024px)').addEventListener('change', function (e) { if (e.matches && nav.classList.contains('is-open')) setOpen(false); });
 
     // Podświetlenie bieżącej sekcji w menu.
     var links = $$('.site-nav__list a');
@@ -341,6 +351,10 @@
       prev.addEventListener('click', function () { go(-1); });
       next.addEventListener('click', function () { go(1); });
       track.addEventListener('scroll', function () { requestAnimationFrame(state); }, { passive: true });
+      track.addEventListener('focusin', function (e) {
+        try { if (!e.target.matches(':focus-visible')) return; } catch (err) { /* starsza przeglądarka */ }
+        var li = e.target.closest('li'); if (li) li.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+      });
       window.addEventListener('resize', state);
       state();
     });
@@ -364,6 +378,7 @@
   function initCollapsibles() {
     $$('[data-acc-btn]').forEach(function (btn) {
       var panel = doc.getElementById(btn.getAttribute('aria-controls'));
+      btn.setAttribute('aria-expanded', 'false');
       hide(panel);
       btn.addEventListener('click', function () { setPanel(btn, panel, btn.getAttribute('aria-expanded') !== 'true'); });
       panel.addEventListener('beforematch', function () { setPanel(btn, panel, true); });
@@ -371,6 +386,7 @@
     var ex = $('[data-expander]');
     if (ex) {
       var btn = $('[data-expander-btn]', ex), panel = $('[data-expander-panel]', ex), label = $('[data-expander-label]', ex);
+      btn.setAttribute('aria-expanded', 'false');
       hide(panel);
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') !== 'true';
@@ -581,6 +597,7 @@
 
   /* ---------- Start ---------- */
   function safe(fn) { try { fn(); } catch (err) { if (window.console) console.error('[padre]', err); } }
+  if (!root.classList.contains('js')) { root.classList.add('js'); $$('.reveal').forEach(function (el) { el.classList.add('is-in'); }); }
   safe(initTickets);
   safe(initHeader);
   safe(initCountdown);

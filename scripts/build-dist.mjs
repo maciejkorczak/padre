@@ -18,7 +18,7 @@ const files = new Set(['index.html', '.htaccess', 'robots.txt', 'sitemap.xml', '
 for (const m of html.matchAll(/(href|src|srcset|imagesrcset|data-lb-avif|data-lb-jpg)="([^"]+)"/g)) {
   if (m[2].startsWith('data:')) continue; // obrazek wpisany w HTML (np. pusty kadr lightboxa)
   // Przecinki rozdzielają adresy tylko w srcset; w href mogą być częścią adresu (np. link eBilet).
-  for (const part of /srcset/.test(m[1]) ? m[2].split(',') : [m[2]]) {
+  for (const part of /srcset|^data-lb-(avif|jpg)$/.test(m[1]) ? m[2].split(',') : [m[2]]) {
     const p = part.trim().split(/\s+/)[0].split('?')[0];
     if (p && !/^(https?:|mailto:|#|data:)/.test(p)) files.add(p);
   }

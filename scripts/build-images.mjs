@@ -43,6 +43,8 @@ const SPECS = {
 };
 const POSTER = { widths: [400, 800] };
 const TIKTOK = { widths: [270, 540] };
+// Kadr z detaliczną fasadą katedry: q45 wygląda jak q60, a plik jest o ok. 1/3 mniejszy.
+SPECS['tiktok-koszyce'] = { ...TIKTOK, quality: 45 };
 
 // Ustawienia kodowania. Zmiana ENCODER wymusza ponowne kodowanie wszystkich wariantów.
 // AVIF 4:2:0 dla zdjęć (mniejsze pliki, ta sama ostrość); grafiki z tekstem (plakaty, DJ Mag) zostają 4:4:4.
@@ -79,7 +81,7 @@ for (const [name, spec] of Object.entries(SPECS)) {
     const fresh = await Promise.all(['avif', 'jpg'].map((ext) => stat(path.join(OUT, `${name}-${w}.${ext}`)).then((st) => st.mtimeMs >= srcTime, () => false)));
     if (!force && fresh.every(Boolean)) continue;
     const img = decoded().resize({ width: w, withoutEnlargement: true });
-    await img.clone().avif({ quality: 60, effort: 6, chromaSubsampling: graphic(name) ? '4:4:4' : '4:2:0' }).toFile(path.join(OUT, `${name}-${w}.avif`));
+    await img.clone().avif({ quality: spec.quality ?? 60, effort: 6, chromaSubsampling: graphic(name) ? '4:4:4' : '4:2:0' }).toFile(path.join(OUT, `${name}-${w}.avif`));
     await img.clone().jpeg({ quality: 82, mozjpeg: true, progressive: true }).toFile(path.join(OUT, `${name}-${w}.jpg`));
   }
   manifest[name] = { w: meta.width, h: meta.height, widths: uniq };

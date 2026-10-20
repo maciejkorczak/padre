@@ -213,6 +213,14 @@
       2000
     ]
   },
+  "tiktok-koszyce": {
+    "w": 540,
+    "h": 960,
+    "widths": [
+      270,
+      540
+    ]
+  },
   "plakat-01": {
     "w": 1000,
     "h": 1250,
@@ -294,14 +302,6 @@
     ]
   },
   "tiktok-dreamfields": {
-    "w": 540,
-    "h": 960,
-    "widths": [
-      270,
-      540
-    ]
-  },
-  "tiktok-koszyce": {
     "w": 540,
     "h": 960,
     "widths": [

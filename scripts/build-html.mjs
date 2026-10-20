@@ -107,7 +107,7 @@ function faqItem(item, id) {
   const links = item.links ? `<ul class="faq__links">${item.links.map((l) => `<li><a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)}</a></li>`).join('')}</ul>` : '';
   const ticket = item.ticket ? '<p><a class="btn btn--primary btn--sm" href="#bilety" data-ticket="faq">Kup bilet</a></p>' : '';
   return `<div class="acc">
-        <h3 class="acc__h"><button class="acc__btn" type="button" id="${id}-btn" aria-expanded="false" aria-controls="${id}-panel" data-acc-btn>${esc(item.q)}<span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <h3 class="acc__h"><button class="acc__btn" type="button" id="${id}-btn" aria-controls="${id}-panel" data-acc-btn>${esc(item.q)}<span class="acc__icon" aria-hidden="true"></span></button></h3>
         <div class="acc__panel" id="${id}-panel" data-acc-panel>
           <div class="acc__inner">${paras}${list}${contacts}${links}${ticket}</div>
         </div>
@@ -215,13 +215,15 @@ for (const f of ['assets/css/main.css', 'assets/js/config.js', 'assets/js/main.j
   html = html.replaceAll(`"${f}"`, `"${f}?v=${v}"`);
 }
 
-// Linki otwierane w nowej karcie: informacja dla czytników ekranu.
-// Bez linków biletowych i akredytacji (opis dopisuje main.js) i bez tych, które już ją mają.
+// Linki otwierane w nowej karcie: informacja dla czytników ekranu (działa też bez JavaScriptu;
+// main.js nie dopisuje drugiej, gdy link już ją ma).
 const NEW_TAB = 'otwiera się w nowej karcie';
+const accName = /pressaccreditations/.test(config.accreditationUrl || '') ? 'formularz Press Accreditations' : 'formularz kontaktowy Live2Listen';
 html = html.replace(/<a\b([^>]*\btarget="_blank"[^>]*)>([\s\S]*?)<\/a>/g, (all, attrs, inner) => {
-  if (/data-ticket|data-accreditation/.test(attrs) || inner.includes(NEW_TAB)) return all;
+  if (inner.includes(NEW_TAB)) return all;
   if (/aria-label="/.test(attrs)) return `<a${attrs.replace(/aria-label="([^"]*)"/, `aria-label="$1 (${NEW_TAB})"`)}>${inner}</a>`;
-  return `<a${attrs}>${inner}<span class="visually-hidden"> (${NEW_TAB})</span></a>`;
+  const what = /data-ticket/.test(attrs) ? 'sprzedaż biletów, ' : /data-accreditation/.test(attrs) ? `${accName}, ` : '';
+  return `<a${attrs}>${inner}<span class="visually-hidden"> (${what}${NEW_TAB})</span></a>`;
 });
 
 const left = html.match(/<pg-img|<!--pg:/g);

@@ -310,6 +310,20 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await ctx.close();
 }
 
+/* ===== 5c. Skrypt po 3-sekundowym zabezpieczeniu (bardzo wolne łącze) ===== */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await ctx.addInitScript(() => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: false, marketing: false, v: 1, ts: Date.now() })); } catch (e) {} });
+  const page = await ctx.newPage();
+  await page.route(/assets\/js\/main\.js/, async (route) => { await new Promise((r) => setTimeout(r, 4200)); route.continue(); });
+  await page.goto(BASE + 'index.html');
+  await page.waitForFunction(() => window.__pgReady === true, null, { timeout: 15000 });
+  await page.waitForTimeout(300);
+  const st = await page.evaluate(() => ({ js: document.documentElement.classList.contains('js'), toggle: getComputedStyle(document.querySelector('[data-nav-toggle]')).display, hidden: [...document.querySelectorAll('.reveal')].filter((e) => getComputedStyle(e).opacity === '0').length }));
+  check('Wolne łącze (main.js po 4 s): menu na telefonie działa, treść widoczna', st.js && st.toggle !== 'none' && st.hidden === 0, JSON.stringify(st));
+  await ctx.close();
+}
+
 /* ===== 6. Bez JavaScriptu ===== */
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
@@ -319,6 +333,8 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   check('Bez JS: treść i nagłówki widoczne', vis);
   const openPanels = await page.$$eval('.acc__panel', (els) => els.filter((e) => e.getBoundingClientRect().height > 5).length);
   check('Bez JS: odpowiedzi FAQ widoczne (panele otwarte)', openPanels === (await page.locator('.acc__panel').count()) && openPanels > 10, `otwartych: ${openPanels}`);
+  check('Bez JS: przyciski FAQ nie zgłaszają „zwinięte” (brak aria-expanded=false)', (await page.locator('[data-acc-btn][aria-expanded="false"], [data-expander-btn][aria-expanded="false"]').count()) === 0);
+  check('Bez JS: linki „Kup bilet” informują o nowej karcie', (await page.$$eval('[data-ticket]', (els) => els.every((a) => /otwiera się w nowej karcie/.test(a.textContent)))));
   await ctx.close();
 }
 
@@ -356,6 +372,13 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await w.page.click('[data-ticket="hero"]');
   check('Zgoda: wycofanie → przeładowanie, brak Meta i GA4, ciasteczka _ga i _fbp usunięte', w.trackerHits.length === hitsBefore && !(await w.page.evaluate(() => typeof window.fbq === 'function')) && (await w.page.evaluate(() => !/_ga=|_fbp=/.test(document.cookie))));
   await w.ctx.close();
+  const fut = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true, init: () => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: true, marketing: true, v: 1, ts: Date.now() + 10 * 365 * 864e5 })); } catch (e) {} } });
+  check('Zgoda: zapis z datą z przyszłości jest nieważny (baner, brak trackerów)', await fut.page.locator('[data-consent]').isVisible() && fut.trackerHits.length === 0);
+  await fut.ctx.close();
+  const dsk = await open({ width: 1366, height: 768 }, { freshConsent: true });
+  const cover = await dsk.page.evaluate(() => { const b = document.querySelector('.hero__cta .btn').getBoundingClientRect(); return document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2).closest('[data-consent]') !== null; });
+  check('Komputer: baner cookies nie zasłania „Kup bilet” w hero', !cover);
+  await dsk.ctx.close();
   const c2 = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
   await c2.page.click('[data-consent-reject]'); await c2.page.waitForTimeout(300);
   await c2.page.reload({ waitUntil: 'networkidle' });
