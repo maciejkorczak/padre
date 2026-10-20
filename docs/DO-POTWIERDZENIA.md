@@ -13,6 +13,7 @@ Legenda: **BLOKER**: bez tego strona nie powinna wyjść na produkcję. **WAŻNE
 | C | **Linki do strony** | **WAŻNE**: live2listen.com i strona wydarzenia Atlas Areny nie linkują do padreguilherme.pl; adres w bio na Instagramie, TikToku i Facebooku. | Live2Listen, Atlas Arena |
 | D | **Polityka prywatności** | **WAŻNE**: polityka Live2Listen nie opisuje GA4, Meta Pixel, odbiorców, transferu do USA ani wycofania zgody; zawiera zdanie o zgodzie przez pozostanie na stronie. Patrz punkt 8. | Live2Listen / prawnik |
 | E | **Meta** | Weryfikacja domeny, „Scrape Again” po wgraniu paczki, decyzja o zdarzeniach automatycznych i bramce Conversions API. | Właściciel piksela |
+| G | **Statystyki /bilety i GA4** | Panel https://padreguilherme.pl/statystyki/ zapisuje wejścia na /bilety bez IP i ciasteczek (docs/WDROZENIE.md, sekcja 3a). **WAŻNE**: polityka prywatności powinna wspomnieć o tym pomiarze. Wysyłka tych wejść do GA4 jest wyłączona: włączyć (klucz API w panelu) dopiero, gdy polityka i najlepiej tekst banera opiszą pomiar serwerowy, a prawnik go zaakceptuje (baner mówi, że GA działa tylko za zgodą). | Live2Listen / prawnik, potem właściciel GA4 |
 | F | **IndexNow (Bing)** | Plik klucza jest w paczce. Po wgraniu można zgłosić adres do Binga jednym zapytaniem (docs/WDROZENIE.md, sekcja 4). | — |
 
 ## Integracje i linki

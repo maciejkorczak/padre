@@ -2,4 +2,7 @@
 DirectoryIndex index.php
 <IfModule mod_headers.c>
   Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+  # Ostrzej niż w głównym .htaccess: panelu nie da się osadzić w żadnej ramce i nie wysyła adresu dalej.
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "no-referrer"
 </IfModule>

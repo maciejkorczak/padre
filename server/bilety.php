@@ -1,10 +1,11 @@
 <?php
 /*
  * padreguilherme.pl/bilety: natychmiastowe przekierowanie (302) do sprzedaży biletów w eBilet
- * z partner=l2lsp, parametrami kampanii (utm_*; utm_source=direct, gdy go brak) i fbclid/gclid,
- * oraz zapis wejścia do statystyk (/statystyki/). Bez ciasteczek i bez adresu IP.
+ * z partner=l2lsp, parametrami kampanii (utm_*; utm_source=direct, gdy go brak) i identyfikatorami
+ * kliknięć (fbclid, gclid...), oraz zapis wejścia do statystyk (/statystyki/). Bez ciasteczek i bez IP.
  * Gdy cokolwiek zawiedzie, przekierowanie i tak działa (adres awaryjny poniżej).
  */
+ob_start(); // ostrzeżenia PHP, BOM ani spacje w plikach nie mogą zablokować nagłówka Location
 define('PG_BILETY', 1);
 $target = 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622';
 $utm = []; $click = []; $ready = false;
@@ -15,18 +16,30 @@ try {
     $target = pg_target($utm, $click);
     $ready = true;
   }
-} catch (Throwable $e) { /* zostaje adres awaryjny */ }
+} catch (Throwable $e) { $ready = false; }
+if (!$ready) {
+  // Awaryjnie (bez lib.php): te same parametry kampanii i identyfikatory kliknięć, bez statystyk.
+  $q = ['partner' => 'l2lsp'];
+  foreach ($_GET as $k => $v) {
+    if (is_string($k) && is_string($v) && preg_match('~^(utm_[a-z0-9_]{1,30}|fbclid|gclid|gbraid|wbraid|ttclid|msclkid)$~i', $k)) $q[strtolower($k)] = substr($v, 0, 1000);
+  }
+  if (!isset($q['utm_source']) || $q['utm_source'] === '') $q['utm_source'] = 'direct';
+  $target = 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?' . http_build_query($q, '', '&', PHP_QUERY_RFC3986) . '#padre-guilherme_155685,1622';
+}
 
+while (ob_get_level()) ob_end_clean();
 header('Location: ' . $target, true, 302);
 header('Cache-Control: no-store, private');
 header('X-Robots-Tag: noindex, nofollow');
 header('Content-Length: 0');
 
 if ($ready) {
+  ob_start();
   try { pg_log(pg_record($utm, $click, $_SERVER)); } catch (Throwable $e) { /* statystyki nie blokują przekierowania */ }
-  // Odpowiedź jest już u odwiedzającego; wysyłka do GA4 i porządki dzieją się po jej zakończeniu.
+  ob_end_clean();
+  // Odpowiedź jest już u odwiedzającego; wysyłka do GA4 dzieje się po jej zakończeniu.
   if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
-    try { pg_ga4_flush(5); if (random_int(1, 200) === 1) pg_cleanup(); } catch (Throwable $e) { }
+    try { pg_ga4_flush(5); } catch (Throwable $e) { }
   }
 }

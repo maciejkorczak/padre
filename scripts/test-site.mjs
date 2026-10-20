@@ -102,12 +102,17 @@ check('FAQ: kod kreskowy zamiast QR, bez pytań o odwołanie i zgubione rzeczy',
 check('Końcowe CTA: „Bilety już w sprzedaży.”', html.includes('Bilety już w sprzedaży.'));
 check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy Live2Listen)', html.includes('href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener" data-accreditation>'));
 
-// Krótki adres dla kampanii: /bilety -> link partnera L2L z utm_source=direct (302, „#” bez kodowania, przed regułami www/https).
+// Krótki adres dla kampanii: /bilety -> bilety.php (statystyki, 302 do linku partnera L2L), przed regułami www/https.
+// Awaryjnie (bez bilety.php) przekierowanie w .htaccess z tymi samymi parametrami (utm_source=direct, gdy brak).
 {
   const ht = await readFile(path.join(root, '.htaccess'), 'utf8');
-  const target = 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622';
-  const rule = ht.indexOf(`RewriteRule ^bilety/?$ "${target}" [NC,NE,R=302,L]`);
-  check('.htaccess: /bilety przekierowuje do linku partnera z utm_source=direct (bez „/” przed „?”)', rule > 0 && rule < ht.indexOf('RewriteCond %{HTTP_HOST} ^www') && /utm_source=direct&%1=%2#padre-guilherme_155685,1622" \[NC,NE,R=302,L\]/.test(ht));
+  const base = 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp';
+  const frag = '#padre-guilherme_155685,1622';
+  const canon = ht.indexOf('RewriteCond %{HTTP_HOST} ^www');
+  const php = ht.indexOf('RewriteRule ^bilety/?$ /bilety.php [NC,END]');
+  const rules = [`${base}&%{QUERY_STRING}${frag}`, `${base}&utm_source=direct&%{QUERY_STRING}${frag}`, `${base}&utm_source=direct${frag}`].map((t) => ht.indexOf(`RewriteRule ^bilety/?$ "${t}" [NC,NE,R=302,L]`));
+  check('.htaccess: /bilety obsługuje bilety.php (END), przed regułami www/https', php > 0 && php < canon);
+  check('.htaccess: awaryjne przekierowanie z parametrami z linku (bez „/” przed „?”)', rules.every((i) => i > php && i < canon) && /\(\?:\^\|&\)utm_source= \[NC\]/.test(ht));
 }
 // Myślniki: tylko zwykły „-” (także w treściach z CSS i w tekstach wstawianych przez JS).
 {

@@ -12,13 +12,16 @@
   RewriteCond %{DOCUMENT_ROOT}/bilety.php -f [OR]
   RewriteCond %{CONTEXT_DOCUMENT_ROOT}/bilety.php -f
   RewriteRule ^bilety/?$ /bilety.php [NC,END]
-  # 2) Awaryjnie (gdy nie ma bilety.php): przekierowanie bez statystyk.
+  # 2) Awaryjnie (gdy nie ma bilety.php): przekierowanie bez statystyk, z wszystkimi parametrami z linku
+  #    (utm_*, fbclid, gclid...); utm_source=direct tylko, gdy link go nie ma.
   # Adres eBilet bez „/” przed „?”: wersja z ukośnikiem przekierowuje w eBilet i gubi utm_source.
   # 302 (tymczasowe): przeglądarki nie zapamiętują celu na stałe. NE: „#” zostaje „#”.
-  # Identyfikator kliknięcia reklamy (fbclid z Meta, gclid z Google) przechodzi dalej do eBilet.
   RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
-  RewriteCond %{QUERY_STRING} (?:^|&)(fbclid|gclid)=([A-Za-z0-9._-]+) [NC]
-  RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct&%1=%2#padre-guilherme_155685,1622" [NC,NE,R=302,L]
+  RewriteCond %{QUERY_STRING} (?:^|&)utm_source= [NC]
+  RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&%{QUERY_STRING}#padre-guilherme_155685,1622" [NC,NE,R=302,L]
+  RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
+  RewriteCond %{QUERY_STRING} .
+  RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct&%{QUERY_STRING}#padre-guilherme_155685,1622" [NC,NE,R=302,L]
   RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
   RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622" [NC,NE,R=302,L]
 

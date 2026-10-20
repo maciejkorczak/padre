@@ -46,6 +46,7 @@ Przy `passUtmToTicketUrl: true` parametry `utm_*` z adresu strony są dopisywane
 |------|--------|---------------|
 | Odsłony, źródła ruchu, kampanie (UTM), urządzenia | GA4 / GTM na tej stronie | My (po wpisaniu ID i zgodzie użytkownika) |
 | Kliknięcia „Kup bilet” wg lokalizacji przycisku | `click_buy_ticket` | My |
+| Wejścia na krótki adres `/bilety` (data, utm_source/medium/campaign/content, strona odsyłająca, aplikacja, urządzenie, fbclid/gclid) | Pomiar serwerowy, panel https://padreguilherme.pl/statystyki/ (bez IP i ciasteczek; docs/WDROZENIE.md, sekcja 3a) | My (hasło do panelu); opcjonalnie też GA4 jako zdarzenie `przekierowanie_bilety` |
 | Zaangażowanie: TikTok, galeria, akredytacje | `click_media`, `open_gallery`, `submit_accreditation` | My |
 | Grupy remarketingowe (odwiedzający, klikający „Kup bilet”) | Meta Pixel, Google Ads przez GTM | My, tylko dla osób ze zgodą marketingową |
 | **Sprzedaż biletów, przychód, liczba transakcji** | System eBilet | **Organizator (Live2Listen) / eBilet**: wymaga raportów albo integracji (np. piksel lub tag konwersji eBilet na stronie potwierdzenia zakupu, eksport sprzedaży wg UTM) |
