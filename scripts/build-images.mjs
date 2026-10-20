@@ -76,15 +76,18 @@ for (const [name, spec] of Object.entries(SPECS)) {
   if (spec.widths.some((w) => w > meta.width)) widths.push(meta.width);
   const uniq = [...new Set(widths)].sort((a, b) => a - b);
   const srcTime = (await stat(srcFile)).mtimeMs;
+  // Jakość zapisana w manifeście: zmiana `quality` w SPECS wymusza ponowne kodowanie tego zdjęcia.
+  const q = spec.quality ?? 60;
+  const sameQ = (previous[name]?.q ?? 60) === q;
   for (const w of uniq) {
     // Pomija warianty, które już istnieją i są nowsze od oryginału (szybsze przebudowy).
     const fresh = await Promise.all(['avif', 'jpg'].map((ext) => stat(path.join(OUT, `${name}-${w}.${ext}`)).then((st) => st.mtimeMs >= srcTime, () => false)));
-    if (!force && fresh.every(Boolean)) continue;
+    if (!force && sameQ && fresh.every(Boolean)) continue;
     const img = decoded().resize({ width: w, withoutEnlargement: true });
-    await img.clone().avif({ quality: spec.quality ?? 60, effort: 6, chromaSubsampling: graphic(name) ? '4:4:4' : '4:2:0' }).toFile(path.join(OUT, `${name}-${w}.avif`));
+    await img.clone().avif({ quality: q, effort: 6, chromaSubsampling: graphic(name) ? '4:4:4' : '4:2:0' }).toFile(path.join(OUT, `${name}-${w}.avif`));
     await img.clone().jpeg({ quality: 82, mozjpeg: true, progressive: true }).toFile(path.join(OUT, `${name}-${w}.jpg`));
   }
-  manifest[name] = { w: meta.width, h: meta.height, widths: uniq };
+  manifest[name] = { w: meta.width, h: meta.height, widths: uniq, ...(q !== 60 && { q }) };
   console.log(name.padEnd(22), `${meta.width}x${meta.height}`, uniq.join(','));
 }
 

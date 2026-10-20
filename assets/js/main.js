@@ -132,7 +132,7 @@
     function save(c) {
       c.v = CONSENT_V; c.ts = Date.now();
       store.set('pg_consent', c);
-      box.hidden = true; reserve(false);
+      box.hidden = true; reserve(false); updateSticky();
       if (withdraw(c)) { location.reload(); return; }
       applyConsent(c);
       var back = opener && opener.isConnected ? opener : doc.getElementById('tresc');
@@ -144,7 +144,7 @@
       cbA.checked = !!saved.analytics; cbM.checked = !!saved.marketing;
       opts.hidden = !custom; btnSave.hidden = !custom; btnCustom.hidden = !!custom;
       box.hidden = false;
-      reserve(true);
+      reserve(true); updateSticky();
     }
     $('[data-consent-accept]', box).addEventListener('click', function () { save({ analytics: true, marketing: true }); });
     $('[data-consent-reject]', box).addEventListener('click', function () { save({ analytics: false, marketing: false }); });
@@ -155,7 +155,7 @@
     window.addEventListener('resize', function () { if (!box.hidden) reserve(true); });
     box.addEventListener('keydown', function (e) {
       if (!opener) return;
-      if (e.key === 'Escape') { e.preventDefault(); box.hidden = true; reserve(false); var o = opener; opener = null; o.focus(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); box.hidden = true; reserve(false); updateSticky(); var o = opener; opener = null; o.focus(); return; }
       if (e.key !== 'Tab') return;
       var f = $$('input:not([disabled]), button, a[href]', box).filter(function (el) { return el.offsetParent !== null; });
       if ((!e.shiftKey && doc.activeElement === f[f.length - 1]) || (e.shiftKey && doc.activeElement === f[0])) { e.preventDefault(); opener.focus(); }
@@ -573,8 +573,9 @@
   var stickyState = { heroVisible: true, stopVisible: false, typing: false };
   function updateSticky() {
     if (!sticky) return;
+    var consentBox = $('[data-consent]');
     var show = mqMobile.matches && !stickyState.heroVisible && !stickyState.stopVisible && !stickyState.typing &&
-      !root.classList.contains('nav-open') && !root.classList.contains('lb-open');
+      !root.classList.contains('nav-open') && !root.classList.contains('lb-open') && !(consentBox && !consentBox.hidden);
     sticky.classList.toggle('is-visible', show);
     root.classList.toggle('has-sticky', show);
     sticky.setAttribute('aria-hidden', String(!show));
