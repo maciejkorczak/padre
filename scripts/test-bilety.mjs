@@ -44,7 +44,8 @@ http_response_code(404); return true;
 
 // Serwer słucha na wszystkich adresach 127.x, żeby sprawdzić limit logowań z dwóch „różnych” adresów.
 const port = 18000 + Math.floor(Math.random() * 2000);
-const php = spawn('php', ['-S', `0.0.0.0:${port}`, path.join(dir, 'router.php')], { cwd: dir, stdio: 'ignore' });
+// Bez opcache (zmiany config.php w trakcie testu działają od razu), 4 procesy (test równoległych logowań).
+const php = spawn('php', ['-d', 'opcache.enable=0', '-S', `0.0.0.0:${port}`, path.join(dir, 'router.php')], { cwd: dir, stdio: 'ignore', env: { ...process.env, PHP_CLI_SERVER_WORKERS: '4' } });
 const BASE = `http://127.0.0.1:${port}`;
 for (let i = 0; i < 50; i++) { try { await fetch(BASE + '/x'); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
 
@@ -75,6 +76,8 @@ try {
     [`/bilety?utm_source=facebook&fbclid=${LONG}`, `${T}&utm_source=facebook&fbclid=${LONG}${F}`],
     ['/bilety?utm_source=newsletter&utm_content=jan.kowalski%40example.com&utm_term=%2B48%20600%20700%20800&utm_campaign=120212345678901234', `${T}&utm_source=newsletter&utm_campaign=120212345678901234&utm_content=jan.kowalski%40example.com&utm_term=%2B48%20600%20700%20800${F}`],
     ['/bilety?utm_source=csv&utm_content=%3DHYPERLINK(%22http%3A%2F%2Fx%22%3B%22y%22)', `${T}&utm_source=csv&utm_content=%3DHYPERLINK%28%22http%3A%2F%2Fx%22%3B%22y%22%29${F}`],
+    ['/bilety?utm_campaign=a&amp;utm_content=b', `${T}&utm_source=direct&utm_campaign=a&utm_content=b${F}`],
+    ['/bilety?utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=22334455&gclid=G1', `${T}&utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=22334455&gclid=G1${F}`],
   ];
   for (const [q, want] of cases) {
     const r = await go(q);
@@ -86,18 +89,19 @@ try {
   await go('/bilety?utm_source=facebook', { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' });
   await go('/bilety', { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/141', 'Sec-Purpose': 'prefetch' });
   await go('/bilety?utm_source=head', {}, 'HEAD');
+  await go('/bilety?utm_source=post', {}, 'POST');
   await go('/bilety?utm_source=facebook&utm_content=%3Cscript%3Ealert(1)%3C%2Fscript%3E&fbclid=SEKRET123', { 'User-Agent': 'Mozilla/5.0 (Linux; Android 13; SM-S911B) AppleWebKit/537.36 Chrome/141.0 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/450.0.0;]', Referer: 'https://lm.facebook.com/l.php?u=x' });
   await go('/bilety?utm_source=instagram&utm_campaign=android_ig', { 'User-Agent': UA_IG_ANDROID, Referer: 'https://l.instagram.com/' });
   await go('/bilety?utm_source=gpc_test', { 'Sec-GPC': '1' });
   human += 3;
-  const sent = 3 + human; // + robot, podgląd, HEAD
+  const sent = 4 + human; // + robot, podgląd, HEAD, POST
 
   /* ---------- Zapis wejść ---------- */
   const { files, raw, rows } = await readRows();
   check('Zapis: każde wejście zapisane (także robot, podgląd i HEAD, oznaczone)', rows.length === sent, `${rows.length}/${sent}`);
   check('Zapis: pliki danych zaczynają się od blokady PHP i nic nie wyświetlają', files.length > 0 && raw.startsWith('<?php exit; ?>\n') && execFileSync('php', [path.join(DANE, files[0])]).toString() === '');
   check('Zapis: bez IP, user-agenta i wartości identyfikatorów kliknięć', !/127\.0\.0\.1|Mozilla|SEKRET123|IwAR0abc|IwZXh0bg|Cj0K/.test(raw));
-  check('Zapis: robot, podgląd i HEAD oznaczone', rows.some((r) => r.bot === 1 && r.us === 'facebook') && rows.some((r) => r.pre === 1) && rows.some((r) => r.head === 1 && r.us === 'head'));
+  check('Zapis: robot, podgląd, HEAD i POST oznaczone (nie są odwiedzinami)', rows.some((r) => r.bot === 1 && r.us === 'facebook') && rows.some((r) => r.pre === 1) && rows.some((r) => r.head === 1 && r.us === 'head') && rows.some((r) => r.head === 1 && r.us === 'post'));
   const fb = rows.find((r) => r.app === 'facebook');
   check('Zapis: aplikacja, urządzenie, system, strona odsyłająca, fbclid jako znacznik', fb && fb.dev === 'telefon' && fb.os === 'Android' && fb.ref === 'lm.facebook.com' && fb.fbclid === 1);
   const iga = rows.find((r) => r.uc === 'android_ig');
@@ -120,6 +124,8 @@ try {
     'Telefon CUBOT (nie robot)': ['Mozilla/5.0 (Linux; Android 10; CUBOT X30) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36', 'telefon', ''],
     'Googlebot': ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', 'bot', ''],
     'WhatsApp (podgląd)': ['WhatsApp/2.23.20.0', 'bot', ''],
+    'Telegram na Androidzie (człowiek)': ['Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36 Telegram-Android/11.2.2 (Google Pixel 8; Android 14; SDK 34; HIGH)', 'telefon', ''],
+    'TelegramBot (podgląd)': ['TelegramBot (like TwitterBot)', 'bot', ''],
     'Pusty user-agent': ['', 'bot', ''],
   };
   const cl = phpJson('echo json_encode(array_map("pg_client", $in));', Object.values(uas).map((x) => x[0]));
@@ -166,8 +172,8 @@ try {
   check('Panel: poprawne hasło loguje', r.status === 303);
   r = await A.req();
   check('Panel: zestawienia i wykres', /Wejścia dziennie/.test(r.text) && /<svg class="chart"/.test(r.text) && /Źródło \(utm_source\)/.test(r.text) && /Kampania \(utm_campaign\)/.test(r.text) && /Treść \/ kreacja \(utm_content\)/.test(r.text));
-  check('Panel: liczba wejść bez robotów, podglądów i HEAD', new RegExp(`tile hero"><p class="k">[^<]*</p><p class="v">${human}</p>`).test(r.text) && /roboty 1, podglądy linków 2/.test(r.text), (r.text.match(/tile hero.*?<p class="v">(\d+)/) || [])[1]);
-  check('Panel: kafel „Dziś” i identyfikatory kliknięć (Meta, Google, TikTok, Microsoft)', new RegExp(`<p class="k">Dziś</p><p class="v">${human}</p>`).test(r.text) && /Meta 3, Google 1, TikTok 1, Microsoft 1/.test(r.text), (r.text.match(/Meta \d+, Google \d+, TikTok \d+, Microsoft \d+/) || [])[0]);
+  check('Panel: liczba wejść bez robotów, podglądów, HEAD i POST', new RegExp(`tile hero"><p class="k">[^<]*</p><p class="v">${human}</p>`).test(r.text) && /roboty 1, podglądy linków 3/.test(r.text), (r.text.match(/tile hero.*?<p class="v">(\d+)/) || [])[1]);
+  check('Panel: kafel „Dziś” i identyfikatory kliknięć (Meta, Google, TikTok, Microsoft)', new RegExp(`<p class="k">Dziś</p><p class="v">${human}</p>`).test(r.text) && /Meta 3, Google 2, TikTok 1, Microsoft 1/.test(r.text), (r.text.match(/Meta \d+, Google \d+, TikTok \d+, Microsoft \d+/) || [])[0]);
   check('Panel: treść z linków jest bezpiecznie wyświetlana (bez wstrzyknięcia HTML)', r.text.includes('&lt;script&gt;alert(1)&lt;/script&gt;') && !r.text.includes('<script>alert(1)'));
   r = await A.req('GET', null, '?p=d30&eksport=csv');
   const csv = r.buf.toString('utf8');
@@ -175,11 +181,19 @@ try {
   check('Panel: CSV bez formuł i z poprawnym cudzysłowem', csv.includes('"\'=hyperlink(""http://x"";""y"")"') && !/;"=/.test(csv));
   r = await A.req('GET', null, '?p=d30&f_us=facebook');
   check('Panel: filtr po źródle', /źródło: facebook/.test(r.text) && /tile hero"><p class="k">[^<]*<\/p><p class="v">3<\/p>/.test(r.text));
+  r = await A.req('GET', null, '?p=wczoraj');
+  const yday = r.text;
+  r = await A.req('GET', null, '?p=tydz');
+  check('Panel: „Wczoraj” (0 wejść) i „Ten tydzień” (wszystkie dzisiejsze)', /tile hero"><p class="k">[^<]*<\/p><p class="v">0<\/p>/.test(yday) && new RegExp(`tile hero"><p class="k">[^<]*</p><p class="v">${human}</p>`).test(r.text) && /aria-current="true">Ten tydzień/.test(r.text));
+  r = await A.req('GET', null, '?p=all');
+  const allRange = (r.text.match(/tile hero"><p class="k">Wejścia ([\d.]+) - ([\d.]+)</) || []);
+  check('Panel: „Wszystko” zaczyna się od pierwszego wejścia (dziś), nie od początku przechowywania', allRange[1] && allRange[1] === allRange[2], allRange[0]);
+  check('Panel: zestawienie źródło / medium / kampania / treść z linkami do filtra', /Źródło \/ medium \/ kampania \/ treść/.test(r.text) && /f_us=facebook&amp;f_um=paid_social&amp;f_uc=padre_lodz&amp;f_ux=reel_01/.test(r.text));
   r = await A.req('GET', null, '?od=1900-01-01&do=2999-12-31');
   const minDate = (r.text.match(/name="od" value="([\d-]+)" min="([\d-]+)"/) || []);
   check('Panel: zakres dat ograniczony do przechowywanych danych', r.status === 200 && minDate[1] && minDate[1] === minDate[2]);
   r = await A.req('GET', null, '?b_us=Instagram&b_um=Paid+Social&b_uc=Padre+%C5%81%C3%B3d%C5%BA+2027');
-  check('Panel: generator linków (małe litery, bez spacji i polskich znaków)', r.text.includes('https://padreguilherme.pl/bilety?utm_source=instagram&amp;utm_medium=paid_social&amp;utm_campaign=padre_lodz_2027'));
+  check('Panel: generator linków (małe litery, bez spacji i polskich znaków, pole do skopiowania)', /<input id="link-gotowy" type="text" readonly value="https:\/\/padreguilherme\.pl\/bilety\?utm_source=instagram&amp;utm_medium=paid_social&amp;utm_campaign=padre_lodz_2027"/.test(r.text));
 
   // GA4: domyślnie wyłączone; CSRF; zapis klucza; test; wysyłka; wyłączenie.
   check('GA4: domyślnie wyłączone', /status-bad">wyłączone/.test(r.text));
@@ -191,25 +205,37 @@ try {
   check('Panel: pusty klucz GA4 odrzucony z komunikatem', /pole było puste/.test(r.text) && /status-bad">wyłączone/.test(r.text));
   await A.req('POST', { a: 'ga4_zapisz', csrf: A.csrf(), secret: 'abcDEF123456' });
   r = await A.req();
-  check('Panel: zapis klucza GA4 włącza wysyłkę', /status-ok">włączone/.test(r.text) && new RegExp(`Czeka na wysyłkę: ${human - 1}\\.`).test(r.text), (r.text.match(/Czeka na wysyłkę: \d+/) || [])[0]);
+  check('Panel: zapis klucza GA4 włącza wysyłkę od tej chwili (wcześniejsze wejścia nie czekają)', /status-ok">włączone/.test(r.text) && /Czeka na wysyłkę: 0\./.test(r.text) && /od tej chwili/.test(r.text), (r.text.match(/Czeka na wysyłkę: \d+/) || [])[0]);
   const ust = await readFile(path.join(DANE, 'ustawienia.php'), 'utf8');
-  check('Ustawienia zapisane w pliku PHP (nie do odczytu z internetu), config.php bez zmian', ust.startsWith('<?php') && execFileSync('php', [path.join(DANE, 'ustawienia.php')]).toString() === '' && !(await readFile(path.join(dir, '_bilety/config.php'), 'utf8')).includes('abcDEF'));
+  check('Ustawienia: plik PHP z blokadą i danymi JSON (bez include), nic nie wyświetla; config.php bez zmian', ust.startsWith('<?php exit; ?>\n') && JSON.parse(ust.split('\n').slice(1).join('\n')).ga4_secret === 'abcDEF123456' && execFileSync('php', [path.join(DANE, 'ustawienia.php')]).toString() === '' && !(await readFile(path.join(dir, '_bilety/config.php'), 'utf8')).includes('abcDEF'));
+  // Wejścia po włączeniu: 3 osoby, 1 z sygnałem „nie śledź”, 1 robot.
+  await go('/bilety?utm_source=facebook&utm_medium=paid_social&utm_campaign=padre_lodz&utm_content=reel_01&fbclid=IwAR0abc_po');
+  await go('/bilety?utm_source=bing&msclkid=M2');
+  await go('/bilety');
+  await go('/bilety?utm_source=gpc_po', { 'Sec-GPC': '1' });
+  await go('/bilety?utm_source=bot_po', { 'User-Agent': 'Googlebot/2.1' });
+  r = await A.req();
+  check('GA4: czekają tylko wejścia ludzi po włączeniu', /Czeka na wysyłkę: 3\./.test(r.text), (r.text.match(/Czeka na wysyłkę: \d+/) || [])[0]);
   await A.req('POST', { a: 'ga4_test', csrf: A.csrf() });
   await A.req('POST', { a: 'ga4_wyslij', csrf: A.csrf() });
   r = await A.req();
-  check('Panel: po wysyłce nic nie czeka', /Czeka na wysyłkę: 0\./.test(r.text), (r.text.match(/Stan:.{0,400}/) || [])[0]);
+  check('Panel: po wysyłce nic nie czeka', /Czeka na wysyłkę: 0\./.test(r.text), (r.text.match(/Stan:.{0,200}/) || [])[0]);
   await A.req('POST', { a: 'ga4_wyslij', csrf: A.csrf() });
 
-  const mp = gaHits.filter((x) => x.url.startsWith('/mp/collect')).map((x) => JSON.parse(x.body));
-  const ev = mp.filter((b) => b.events[0].name === 'przekierowanie_bilety');
+  let mp = gaHits.filter((x) => x.url.startsWith('/mp/collect')).map((x) => JSON.parse(x.body));
+  let ev = mp.filter((b) => b.events[0].name === 'przekierowanie_bilety');
   check('GA4: test z panelu przechodzi przez walidację i wysyłkę', gaHits.some((x) => x.url.startsWith('/debug/mp/collect')) && mp.some((b) => b.events[0].name === 'przekierowanie_bilety_test'));
-  check('GA4: wysłane tylko wejścia ludzi, bez sygnału „nie śledź”, bez duplikatów', ev.length === human - 1 && !ev.some((b) => b.events[0].params.redirect_source === 'gpc_test'), `${ev.length}/${human - 1}`);
-  check('GA4: losowy client_id dla każdego wejścia, zgody reklamowe „DENIED”', new Set(ev.map((b) => b.client_id)).size === ev.length && ev.every((b) => b.consent.ad_user_data === 'DENIED' && b.consent.ad_personalization === 'DENIED' && b.non_personalized_ads === true));
-  check('GA4: bez IP, user-agenta i wartości identyfikatorów kliknięć w treści', !gaHits.some((x) => /Mozilla|SEKRET123|IwAR0abc|IwZXh0bg|Cj0K|127\.0\.0\.1/.test(x.body)));
+  check('GA4: wysłane tylko 3 wejścia ludzi po włączeniu (bez wcześniejszych, „nie śledź”, robotów i duplikatów)', ev.length === 3 && !ev.some((b) => ['gpc_po', 'bot_po', 'newsletter', 'csv', 'instagram'].includes(b.events[0].params.redirect_source)), ev.map((b) => b.events[0].params.redirect_source).join(','));
+  check('GA4: losowy client_id dla każdego wejścia, zgody reklamowe „DENIED”, bez przestarzałego non_personalized_ads', new Set(ev.map((b) => b.client_id)).size === ev.length && ev.every((b) => b.consent.ad_user_data === 'DENIED' && b.consent.ad_personalization === 'DENIED' && !('non_personalized_ads' in b)));
+  check('GA4: bez IP, user-agenta i wartości identyfikatorów kliknięć w treści', !gaHits.some((x) => /Mozilla|SEKRET123|IwAR0abc|IwZXh0bg|Cj0K|127\.0\.0\.1|M2"/.test(x.body)));
   check('GA4: parametry kampanii w zdarzeniu', ev.some((b) => { const p = b.events[0].params; return p.redirect_source === 'facebook' && p.redirect_medium === 'paid_social' && p.redirect_campaign === 'padre_lodz' && p.redirect_content === 'reel_01' && p.redirect_click_id === 'meta'; }) && ev.some((b) => b.events[0].params.redirect_click_id === 'microsoft') && ev.some((b) => b.events[0].params.redirect_source === 'direct'));
   await A.req('POST', { a: 'ga4_wylacz', csrf: A.csrf() });
   r = await A.req();
-  check('Panel: wyłączenie wysyłki do GA4', /status-bad">wyłączone/.test(r.text) && /Wysyłka do GA4 wyłączona/.test(r.text), (r.text.match(/class="flash[^>]*>[^<]*/) || [])[0] + ' | ' + (r.text.match(/Stan:.{0,100}/) || [])[0]);
+  check('Panel: wyłączenie wysyłki do GA4', /status-bad">wyłączone/.test(r.text) && /Wysyłka do GA4 wyłączona/.test(r.text), (r.text.match(/class="flash[^>]*>[^<]*/) || [])[0]);
+  const before = gaHits.length;
+  await go('/bilety?utm_source=po_wylaczeniu');
+  await A.req('POST', { a: 'ga4_wyslij', csrf: A.csrf() });
+  check('GA4: po wyłączeniu nic nie jest wysyłane (od razu, bez czekania)', gaHits.length === before);
 
   // Limit logowań liczony osobno dla każdego adresu.
   const B = session('127.0.0.2');
@@ -220,7 +246,13 @@ try {
   const C = session('127.0.0.1');
   r = await C.login(PASSWORD);
   check('Logowanie: blokada nie dotyczy innych adresów', r.status === 303);
-  const lj = await readFile(path.join(DANE, 'logowania.json'), 'utf8');
+  // 20 równoległych prób z jednego adresu: limit 5 obowiązuje także wtedy.
+  const E = session('127.0.0.3');
+  await E.req();
+  const par = await Promise.all(Array.from({ length: 20 }, (_, i) => E.req('POST', { a: 'login', csrf: E.csrf(), haslo: 'zle-r' + i })));
+  const verified = par.filter((x) => /Nieprawidłowe hasło/.test(x.text)).length;
+  check('Logowanie: równoległe próby nie omijają limitu 5', verified <= 5 && par.every((x) => /Nieprawidłowe hasło|Za dużo nieudanych prób/.test(x.text)), `${verified} sprawdzonych haseł`);
+  const lj = await readFile(path.join(DANE, 'logowania.php'), 'utf8');
   check('Logowanie: licznik bez adresów IP', !/127\.0\.0\./.test(lj) && lj.startsWith('<?php exit; ?>'));
 
   // Zmiana hasła wylogowuje inne sesje.
@@ -242,9 +274,12 @@ try {
   await D.login('nowe-haslo-panelu-456'); await D.req();
   check('Retencja: zapisy starsze niż 14 miesięcy usunięte', !existsSync(path.join(DANE, 'wejscia-2020-01.php')) && (await readRows()).files.length > 0);
   await writeConfig(", 'limit_minuta' => 1");
-  await new Promise((res) => setTimeout(res, 2200)); // opcache sprawdza zmiany plików co 2 s (jak na serwerze)
   for (let i = 0; i < 3; i++) await go('/bilety?utm_source=zalew&utm_campaign=x' + i);
   const fl = (await readRows()).rows.slice(-3);
+  await writeConfig(", 'limit_pliku_mb' => 0.0001");
+  const nBefore = (await readRows()).rows.length;
+  const capR = await go('/bilety?utm_source=limit_pliku');
+  check('Limit wielkości pliku: wejście nie zapisane, przekierowanie działa', (await readRows()).rows.length === nBefore && capR.headers.get('location') === `${T}&utm_source=limit_pliku${F}`);
   check('Zalew: powyżej limitu na minutę tylko znacznik, bez parametrów (przekierowanie działa)', fl.some((x) => x.flood === 1 && !('us' in x)) && (await go('/bilety?utm_source=zalew2')).headers.get('location') === `${T}&utm_source=zalew2${F}`, JSON.stringify(fl) + ' ' + await readFile(path.join(DANE, 'minuta.json'), 'utf8').catch(() => 'brak minuta.json'));
 } finally {
   php.kill(); ga.close();

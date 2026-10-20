@@ -1,4 +1,4 @@
-# padreguilherme.pl — konfiguracja Apache (home.pl, strona w katalogu głównym serwera)
+# padreguilherme.pl - konfiguracja Apache (home.pl, strona w katalogu głównym serwera)
 
 # Zawsze HTTPS i adres bez www (jeden adres = lepsze SEO).
 # Reguły działają tylko dla padreguilherme.pl, więc na adresie testowym nic nie przekierowują.
@@ -13,14 +13,17 @@
   RewriteCond %{CONTEXT_DOCUMENT_ROOT}/bilety.php -f
   RewriteRule ^bilety/?$ /bilety.php [NC,END]
   # 2) Awaryjnie (gdy nie ma bilety.php): przekierowanie bez statystyk, z wszystkimi parametrami z linku
-  #    (utm_*, fbclid, gclid...); utm_source=direct tylko, gdy link go nie ma.
+  #    (utm_*, fbclid, gclid...); utm_source=direct tylko, gdy link go nie ma. Link z własnym „partner=”
+  #    idzie ostatnią regułą (bez parametrów), żeby eBilet nie dostał dwóch wartości partner.
   # Adres eBilet bez „/” przed „?”: wersja z ukośnikiem przekierowuje w eBilet i gubi utm_source.
   # 302 (tymczasowe): przeglądarki nie zapamiętują celu na stałe. NE: „#” zostaje „#”.
   RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
   RewriteCond %{QUERY_STRING} (?:^|&)utm_source= [NC]
+  RewriteCond %{QUERY_STRING} !(?:^|&)partner= [NC]
   RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&%{QUERY_STRING}#padre-guilherme_155685,1622" [NC,NE,R=302,L]
   RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
   RewriteCond %{QUERY_STRING} .
+  RewriteCond %{QUERY_STRING} !(?:^|&)partner= [NC]
   RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct&%{QUERY_STRING}#padre-guilherme_155685,1622" [NC,NE,R=302,L]
   RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
   RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622" [NC,NE,R=302,L]

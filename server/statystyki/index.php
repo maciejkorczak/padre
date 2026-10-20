@@ -46,7 +46,8 @@ $post = $_SERVER['REQUEST_METHOD'] === 'POST';
 $act = $post && isset($_POST['a']) && is_string($_POST['a']) ? $_POST['a'] : '';
 
 /* ---------- Logowanie: 5 nieudanych prób z jednego adresu = 15 minut przerwy (łącznie najwyżej 50) ---------- */
-// Adres IP tylko jako skrót HMAC z kluczem panelu, trzymany 15 minut wyłącznie do ograniczania logowań.
+// Adres IP tylko jako skrót HMAC z kluczem panelu, wyłącznie do ograniczania logowań: do 15 minut
+// (starsze wpisy są usuwane przy każdym otwarciu panelu).
 function pg_login_key() {
   $u = pg_settings();
   if (empty($u['throttle_key'])) { $u['throttle_key'] = bin2hex(random_bytes(16)); pg_save_settings($u); }
@@ -61,19 +62,28 @@ function pg_login_prune($s) {
 }
 $err = '';
 $writable = is_dir(pg_dane()) && is_writable(pg_dane());
+if (is_file(pg_dane() . '/logowania.php')) pg_update_state('logowania.php', 'pg_login_prune');
 if (!$logged && $act === 'login') {
   $key = pg_login_key();
-  $st = pg_update_state('logowania.json', 'pg_login_prune');
-  if ($st === null) $st = ['k' => [], 'all' => []];
+  // Sprawdzenie limitu i zapis próby w jednym kroku pod blokadą (równoległe próby nie omijają limitu).
+  $blocked = false;
+  if (csrf_ok()) {
+    pg_update_state('logowania.php', function ($s) use ($key, &$blocked) {
+      $s = pg_login_prune($s);
+      if ((isset($s['k'][$key]) && count($s['k'][$key]) >= 5) || count($s['all']) >= 50) { $blocked = true; return $s; }
+      $s['k'][$key][] = time(); $s['all'][] = time();
+      return $s;
+    });
+  }
   if (!csrf_ok()) $err = 'Sesja wygasła. Spróbuj ponownie.';
-  elseif ((isset($st['k'][$key]) && count($st['k'][$key]) >= 5) || count($st['all']) >= 50) $err = 'Za dużo nieudanych prób. Spróbuj ponownie za 15 minut.';
+  elseif ($blocked) $err = 'Za dużo nieudanych prób. Spróbuj ponownie za 15 minut.';
   elseif ($c['panel_hash'] !== '' && isset($_POST['haslo']) && is_string($_POST['haslo']) && password_verify($_POST['haslo'], $c['panel_hash'])) {
     session_regenerate_id(true);
     $_SESSION['pg'] = ['t' => time(), 'g' => pg_gen($c['panel_hash']), 'csrf' => bin2hex(random_bytes(16))];
-    pg_update_state('logowania.json', function ($s) use ($key) { $s = pg_login_prune($s); unset($s['k'][$key]); return $s; });
+    // Udane logowanie: zdejmujemy próby z tego adresu (także tę przed chwilą zapisaną).
+    pg_update_state('logowania.php', function ($s) use ($key) { $s = pg_login_prune($s); unset($s['k'][$key]); return $s; });
     header('Location: ./', true, 303); exit;
   } else {
-    pg_update_state('logowania.json', function ($s) use ($key) { $s = pg_login_prune($s); $s['k'][$key][] = time(); $s['all'][] = time(); return $s; });
     usleep($writable ? 400000 : 2000000); // bez zapisu licznika prób: dłuższa przerwa
     $err = 'Nieprawidłowe hasło.';
   }
@@ -116,7 +126,8 @@ button.ghost, .btn.ghost { background: transparent; border-color: var(--line-2);
 .tile.hero .v { font-size: 3rem; }
 .card { margin-top: 24px; padding: 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 28px 24px; }
-.chart-wrap { overflow-x: auto; }
+.chart-wrap { overflow-x: auto; direction: rtl; } /* na wąskim ekranie widać najpierw najnowsze dni */
+.chart-wrap > svg { direction: ltr; }
 .chart { width: 100%; min-width: 560px; height: auto; display: block; }
 .chart .grid-line { stroke: rgba(236,232,226,.12); stroke-width: 1; }
 .chart .base { stroke: rgba(236,232,226,.3); stroke-width: 1; }
@@ -166,9 +177,11 @@ if ($post) {
     $s = isset($_POST['secret']) && is_string($_POST['secret']) ? trim($_POST['secret']) : '';
     if ($s === '') back('', 'Wpisz klucz API (pole było puste). Aby wyłączyć wysyłkę, użyj przycisku „Wyłącz wysyłkę do GA4”.');
     if (!preg_match('/^[A-Za-z0-9_\-]{8,100}$/', $s)) back('', 'Klucz API ma nieprawidłowy format (litery, cyfry, „-” i „_”).');
+    $wasOff = $c['ga4_secret'] === '';
     $u['ga4_secret'] = $s;
     if (!pg_save_settings($u)) back('', 'Nie udało się zapisać ustawień (katalog danych niezapisywalny).');
-    back('Klucz zapisany. Wejścia będą wysyłane do GA4.');
+    if ($wasOff) pg_ga4_start();
+    back('Klucz zapisany. Do GA4 trafiają wejścia od tej chwili (wcześniejsze nie).');
   }
   if ($act === 'ga4_wylacz') {
     $u['ga4_secret'] = '';
@@ -209,8 +222,13 @@ $today = date('Y-m-d');
 $minDate = pg_oldest_month() . '-01';
 function pg_date($v, $def) { return is_string($v) && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $v, $m) && checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? $v : $def; }
 $preset = isset($_GET['p']) && is_string($_GET['p']) ? $_GET['p'] : '';
-$presets = ['dzis' => ['Dziś', $today, $today], 'd7' => ['7 dni', date('Y-m-d', strtotime('-6 days')), $today], 'd30' => ['30 dni', date('Y-m-d', strtotime('-29 days')), $today],
-  'mies' => ['Ten miesiąc', date('Y-m-01'), $today], 'all' => ['Wszystko', $minDate, $today]];
+$yday = date('Y-m-d', strtotime('-1 day'));
+// „Wszystko” od pierwszego zapisanego wejścia (średnia dzienna liczona od tego dnia).
+$first = pg_first_visit();
+$allFrom = $first === null ? $today : max($minDate, min($first, $today));
+$presets = ['dzis' => ['Dziś', $today, $today], 'wczoraj' => ['Wczoraj', $yday, $yday], 'tydz' => ['Ten tydzień', date('Y-m-d', strtotime('monday this week')), $today],
+  'd7' => ['7 dni', date('Y-m-d', strtotime('-6 days')), $today], 'd30' => ['30 dni', date('Y-m-d', strtotime('-29 days')), $today],
+  'mies' => ['Ten miesiąc', date('Y-m-01'), $today], 'all' => ['Wszystko', $allFrom, $today]];
 if (isset($presets[$preset])) { $od = $presets[$preset][1]; $do = $presets[$preset][2]; }
 else {
   $od = pg_date(isset($_GET['od']) ? $_GET['od'] : '', $presets['d30'][1]); $do = pg_date(isset($_GET['do']) ? $_GET['do'] : '', $today);
@@ -288,9 +306,9 @@ $days = [];
 for ($d = $tOd; $d <= $tDo; $d = strtotime('+1 day', $d)) $days[date('Y-m-d', $d)] = 0;
 $tot = 0; $bots = 0; $pre = 0; $flood = 0; $clicks = ['meta' => 0, 'google' => 0, 'tiktok' => 0, 'microsoft' => 0];
 $dims = ['us' => [], 'um' => [], 'uc' => [], 'ux' => [], 'combo' => [], 'ref' => [], 'app' => [], 'dev' => [], 'os' => [], 'ad' => []];
-$recent = [];
+$recent = []; $comboQ = [];
 const PG_MAX_KEYS = 2000; // więcej różnych wartości trafia do „(inne wartości)”
-each_record($tOd, $tDo, function ($r) use (&$days, &$tot, &$bots, &$pre, &$flood, &$clicks, &$dims, &$recent, $filters, $CLICK_LABELS) {
+each_record($tOd, $tDo, function ($r) use (&$days, &$tot, &$bots, &$pre, &$flood, &$clicks, &$dims, &$recent, &$comboQ, $filters, $CLICK_LABELS) {
   if (!match_filters($r, $filters)) return;
   if (!pg_is_human($r)) { if (!empty($r['flood'])) $flood++; elseif (!empty($r['bot'])) $bots++; else $pre++; return; }
   $tot++;
@@ -299,7 +317,7 @@ each_record($tOd, $tDo, function ($r) use (&$days, &$tot, &$bots, &$pre, &$flood
   $kind = pg_click_kind($r);
   if ($kind !== '') $clicks[$kind]++;
   $vals = ['us' => eff_source($r), 'um' => $r['um'], 'uc' => $r['uc'], 'ux' => $r['ux'],
-    'combo' => eff_source($r) . ' / ' . ($r['um'] !== '' ? $r['um'] : '(brak)') . ' / ' . ($r['uc'] !== '' ? $r['uc'] : '(brak)'),
+    'combo' => eff_source($r) . ' / ' . ($r['um'] !== '' ? $r['um'] : '(brak)') . ' / ' . ($r['uc'] !== '' ? $r['uc'] : '(brak)') . ' / ' . ($r['ux'] !== '' ? $r['ux'] : '(brak)'),
     'ref' => $r['ref'] !== '' ? $r['ref'] : '(brak: aplikacja albo wpisany adres)', 'app' => $r['app'] !== '' ? $r['app'] : 'przeglądarka',
     'dev' => $r['dev'], 'os' => $r['os'], 'ad' => $kind !== '' ? $CLICK_LABELS[$kind] : 'bez identyfikatora kliknięcia'];
   foreach ($vals as $k => $v) {
@@ -307,6 +325,8 @@ each_record($tOd, $tDo, function ($r) use (&$days, &$tot, &$bots, &$pre, &$flood
     if (!isset($dims[$k][$v]) && count($dims[$k]) >= PG_MAX_KEYS) $v = '(inne wartości)';
     $dims[$k][$v] = (isset($dims[$k][$v]) ? $dims[$k][$v] : 0) + 1;
   }
+  // Wiersz zestawienia „źródło / medium / kampania / treść” prowadzi do filtra po wszystkich czterech.
+  if (isset($dims['combo'][$vals['combo']]) && !isset($comboQ[$vals['combo']])) $comboQ[$vals['combo']] = ['f_us' => eff_source($r), 'f_um' => $r['um'] !== '' ? $r['um'] : '(brak)', 'f_uc' => $r['uc'] !== '' ? $r['uc'] : '(brak)', 'f_ux' => $r['ux'] !== '' ? $r['ux'] : '(brak)'];
   $recent[] = $r;
   if (count($recent) > 50) array_shift($recent);
 });
@@ -349,13 +369,13 @@ function chart_days($days) {
       $s .= '<path class="bar" d="M' . round($x, 1) . ',' . $y0 . 'V' . round($yt + $rad, 1) . 'Q' . round($x, 1) . ',' . round($yt, 1) . ' ' . round($x + $rad, 1) . ',' . round($yt, 1) . 'H' . round($x + $bw - $rad, 1) . 'Q' . round($x + $bw, 1) . ',' . round($yt, 1) . ' ' . round($x + $bw, 1) . ',' . round($yt + $rad, 1) . 'V' . $y0 . 'Z"/>';
     }
     $s .= '</g>';
-    if ($i % $every === 0) $s .= '<text class="tick" x="' . round($L + $i * $slot + $slot / 2, 1) . '" y="' . ($H - 10) . '" text-anchor="middle">' . h(date('d.m', $t)) . '</text>';
+    if ($i % $every === 0) $s .= '<text class="tick" x="' . round($L + $i * $slot + $slot / 2, 1) . '" y="' . ($H - 10) . '" text-anchor="middle">' . h(date($n > 366 ? 'm.Y' : 'd.m', $t)) . '</text>';
     $i++;
   }
   return $s . '</svg></div>';
 }
 
-function dim_table($title, $data, $total, $filterKey = '', $limit = 12) {
+function dim_table($title, $data, $total, $filterKey = '', $limit = 12, $links = []) {
   $s = '<section><h2>' . h($title) . '</h2>';
   if (!$data) return $s . '<p class="empty">Brak danych w tym zakresie.</p></section>';
   $s .= '<div class="tbl-wrap"><table><thead><tr><th>Wartość</th><th class="n">Wejścia</th><th class="n">Udział</th></tr></thead><tbody>';
@@ -364,6 +384,7 @@ function dim_table($title, $data, $total, $filterKey = '', $limit = 12) {
     if ($i++ >= $limit) { $other += $v; continue; }
     $name = h($k);
     if ($filterKey !== '') $name = '<a href="' . h(qs(['f_' . $filterKey => (string) $k])) . '">' . $name . '</a>';
+    elseif (isset($links[$k])) $name = '<a href="' . h(qs($links[$k])) . '">' . $name . '</a>';
     $s .= '<tr><td class="name">' . $name . '<div class="meter" aria-hidden="true"><i style="width:' . round(100 * $v / max(1, $total), 1) . '%"></i></div></td><td class="n">' . nf($v) . '</td><td class="n">' . pct($v, $total) . '</td></tr>';
   }
   if ($other) $s .= '<tr><td class="name">Pozostałe (' . nf(count($data) - $limit) . ')</td><td class="n">' . nf($other) . '</td><td class="n">' . pct($other, $total) . '</td></tr>';
@@ -372,7 +393,7 @@ function dim_table($title, $data, $total, $filterKey = '', $limit = 12) {
 
 /* ---------- Strona ---------- */
 $flash = isset($_SESSION['pg']['flash']) ? $_SESSION['pg']['flash'] : null; unset($_SESSION['pg']['flash']);
-$ga = pg_read_state('ga4-stan.json');
+$ga = pg_read_state('ga4-stan.php');
 echo page_head('Statystyki /bilety');
 echo '<div class="wrap">';
 echo '<header class="top"><div><h1>Statystyki /bilety</h1><p class="muted">Wejścia na <code>padreguilherme.pl/bilety</code> przed przekierowaniem do sprzedaży biletów. Bez robotów i podglądów linków.</p></div>';
@@ -388,6 +409,7 @@ foreach ($presets as $k => $p) {
 echo '</div><label>Od<input type="date" name="od" value="' . h($od) . '" min="' . h($minDate) . '" max="' . h($today) . '"></label><label>Do<input type="date" name="do" value="' . h($do) . '" min="' . h($minDate) . '" max="' . h($today) . '"></label>';
 foreach ($filters as $k => $v) echo '<input type="hidden" name="f_' . h($k) . '" value="' . h($v) . '">';
 echo '<button class="ghost" type="submit">Pokaż</button><a class="btn ghost" href="' . h(qs(['eksport' => 'csv'])) . '">Pobierz CSV</a></form>';
+echo '<p class="muted" style="margin-top:8px">CSV zawiera też wejścia pominięte w liczbach (roboty, podglądy linków): oznacza je kolumna „pominiete”.</p>';
 if ($filters) {
   echo '<p class="muted" style="margin-top:12px">Filtr: ';
   $names = ['us' => 'źródło', 'um' => 'medium', 'uc' => 'kampania', 'ux' => 'treść'];
@@ -399,7 +421,7 @@ echo '<div class="tiles">';
 echo '<div class="tile hero"><p class="k">Wejścia ' . h(date('d.m.Y', $tOd)) . ' - ' . h(date('d.m.Y', $tDo)) . '</p><p class="v">' . nf($tot) . '</p><p class="s">średnio ' . number_format($nDays ? $tot / $nDays : 0, 1, ',', '') . ' dziennie</p></div>';
 echo '<div class="tile"><p class="k">Dziś</p><p class="v">' . nf($todayCount) . '</p><p class="s">' . h(date('d.m.Y')) . '</p></div>';
 echo '<div class="tile"><p class="k">Z identyfikatorem kliknięcia</p><p class="v">' . nf($clickTotal) . '</p><p class="s">' . pct($clickTotal, $tot) . ' wejść: Meta ' . nf($clicks['meta']) . ', Google ' . nf($clicks['google']) . ', TikTok ' . nf($clicks['tiktok']) . ', Microsoft ' . nf($clicks['microsoft']) . '</p></div>';
-echo '<div class="tile"><p class="k">Pominięte</p><p class="v">' . nf($bots + $pre + $flood) . '</p><p class="s">roboty ' . nf($bots) . ', podglądy linków ' . nf($pre) . ($flood ? ', zalew ' . nf($flood) : '') . '</p></div>';
+echo '<div class="tile"><p class="k">Pominięte</p><p class="v">' . nf($bots + $pre + $flood) . '</p><p class="s">roboty ' . nf($bots) . ', podglądy linków ' . nf($pre) . ($flood ? ', zalew (ponad ' . nf($c['limit_minuta']) . ' wejść na minutę, zapisany tylko czas) ' . nf($flood) : '') . '</p></div>';
 echo '</div>';
 echo '<p class="muted" style="margin-top:10px">fbclid Meta dodaje zarówno do reklam, jak i do zwykłych linków klikniętych w Instagramie i Facebooku, dlatego „Meta” to nie tylko reklamy. Reklamy rozpoznasz po parametrach UTM kampanii.</p>';
 
@@ -414,7 +436,7 @@ echo dim_table('Medium (utm_medium)', $dims['um'], $tot, 'um');
 echo dim_table('Kampania (utm_campaign)', $dims['uc'], $tot, 'uc');
 echo dim_table('Treść / kreacja (utm_content)', $dims['ux'], $tot, 'ux');
 echo '</div></div>';
-echo '<div class="card">' . dim_table('Źródło / medium / kampania', $dims['combo'], $tot, '', 20) . '</div>';
+echo '<div class="card">' . dim_table('Źródło / medium / kampania / treść', $dims['combo'], $tot, '', 20, $comboQ) . '</div>';
 echo '<div class="card"><div class="grid">';
 echo dim_table('Strona odsyłająca', $dims['ref'], $tot);
 echo dim_table('Aplikacja', $dims['app'], $tot);
@@ -445,14 +467,14 @@ function pg_slug($v) {
 }
 $b = [];
 foreach (['us', 'um', 'uc', 'ux'] as $k) $b[$k] = isset($_GET['b_' . $k]) && is_string($_GET['b_' . $k]) ? pg_slug($_GET['b_' . $k]) : '';
-echo '<section class="card"><h2>Link do kampanii</h2><p class="muted">Jedno nazewnictwo dla wszystkich: małe litery, bez spacji i polskich znaków, np. <code>instagram</code> / <code>paid_social</code> / <code>padre_lodz_2027</code> / <code>reel_skytech_01</code>. Nigdy nie wpisuj w link danych osobowych (imion, e-maili, telefonów).</p>';
+echo '<section class="card"><h2>Link do kampanii</h2><p class="muted">Jedno nazewnictwo dla wszystkich: małe litery, bez spacji i polskich znaków, np. <code>instagram</code> / <code>paid_social</code> / <code>padre_lodz_2027</code> / <code>reel_skytech_01</code>. Nigdy nie wpisuj w link danych osobowych (imion, e-maili, telefonów) ani kodów pojedynczych odbiorców (np. numeru klienta, znaczników newslettera typu *|UNIQID|*): jeden link na grupę odbiorców.</p>';
 echo '<form class="row" method="get" style="margin-top:12px">';
 foreach (['us' => 'utm_source', 'um' => 'utm_medium', 'uc' => 'utm_campaign', 'ux' => 'utm_content'] as $k => $l) echo '<label>' . h($l) . '<input type="text" name="b_' . h($k) . '" value="' . h($b[$k]) . '" style="max-width:200px"></label>';
 echo '<input type="hidden" name="od" value="' . h($od) . '"><input type="hidden" name="do" value="' . h($do) . '"><button class="ghost" type="submit">Utwórz link</button></form>';
 if (array_filter($b)) {
   $q = [];
   foreach (['us' => 'utm_source', 'um' => 'utm_medium', 'uc' => 'utm_campaign', 'ux' => 'utm_content'] as $k => $l) if ($b[$k] !== '') $q[$l] = $b[$k];
-  echo '<p style="margin-top:12px">Link: <code>' . h('https://padreguilherme.pl/bilety?' . http_build_query($q, '', '&', PHP_QUERY_RFC3986)) . '</code></p>';
+  echo '<p style="margin-top:12px"><label for="link-gotowy" class="muted">Link (zaznacz i skopiuj)</label><input id="link-gotowy" type="text" readonly value="' . h('https://padreguilherme.pl/bilety?' . http_build_query($q, '', '&', PHP_QUERY_RFC3986)) . '" style="display:block;width:100%;max-width:100%;margin-top:4px"></p>';
   echo '<p class="muted" style="margin-top:6px">Prowadzi do: <code>' . h(pg_target(pg_params($q)[0], [])) . '</code></p>';
 }
 echo '</section>';
@@ -460,8 +482,8 @@ echo '</section>';
 /* GA4 */
 $pending = $c['ga4_secret'] !== '' ? pg_ga4_pending() : 0;
 echo '<section class="card"><h2>Google Analytics 4 (opcjonalnie)</h2>';
-echo '<p class="muted">Po włączeniu każde wejście (bez robotów, podglądów i wejść z sygnałem „nie śledź”) trafia do GA4 ' . h($c['ga4_id']) . ' jako zdarzenie <code>przekierowanie_bilety</code> z parametrami <code>redirect_source</code>, <code>redirect_medium</code>, <code>redirect_campaign</code>, <code>redirect_content</code>, <code>redirect_term</code>, <code>redirect_referrer</code>, <code>redirect_app</code>, <code>redirect_device</code>, <code>redirect_click_id</code>. Wysyła serwer: bez ciasteczek, bez adresu IP i przeglądarki odwiedzającego, z losowym identyfikatorem dla każdego wejścia i zgodami reklamowymi ustawionymi na odmowę. W GA4 każde wejście to osobny anonimowy użytkownik bez sesji: analizuj je w raporcie zdarzeń <code>przekierowanie_bilety</code>, nie w raportach pozyskiwania. Lokalizacja (kraj, miasto) dotyczy serwera, nie odwiedzającego.</p>';
-echo '<p class="warn">Przed włączeniem: baner cookies na stronie mówi, że Google Analytics działa tylko za zgodą, a osoby wchodzące przez /bilety banera nie widzą. Wysyłka nie zapisuje niczego na urządzeniu i nie zawiera danych osobowych, ale polityka prywatności (i najlepiej tekst banera) powinny ją opisywać. Włącz dopiero po ich aktualizacji i akceptacji prawnika. Pełne dane są w tym panelu także bez GA4.</p>';
+echo '<p class="muted">Po włączeniu każde wejście (bez robotów, podglądów i wejść z sygnałem „nie śledź”) trafia do GA4 ' . h($c['ga4_id']) . ' jako zdarzenie <code>przekierowanie_bilety</code> z parametrami <code>redirect_source</code>, <code>redirect_medium</code>, <code>redirect_campaign</code>, <code>redirect_content</code>, <code>redirect_term</code>, <code>redirect_referrer</code>, <code>redirect_app</code>, <code>redirect_device</code>, <code>redirect_click_id</code>. Wysyła serwer: bez ciasteczek, bez adresu IP i przeglądarki odwiedzającego, z losowym identyfikatorem dla każdego wejścia i zgodami reklamowymi ustawionymi na odmowę. Do GA4 trafiają tylko wejścia od chwili włączenia. W GA4 każde wejście to osobny użytkownik z losowym identyfikatorem, bez sesji: analizuj je w raporcie zdarzeń <code>przekierowanie_bilety</code>, nie w raportach pozyskiwania. Lokalizacja (kraj, miasto) dotyczy serwera, nie odwiedzającego.</p>';
+echo '<p class="warn">Przed włączeniem: wysyłka nie zapisuje niczego na urządzeniu i nie zawiera adresu IP, ciasteczek ani stałych identyfikatorów, ale Google (także serwery w USA) otrzymuje czas i parametry kampanii każdego wejścia. Baner strony obiecuje, że Google Analytics działa tylko za zgodą, a osoby wchodzące przez /bilety banera nie widzą: do GA4 trafiłyby też te, które zgody odmówiły. Zasady Google dla Measurement Protocol wymagają poinformowania użytkowników oraz zgody albo możliwości sprzeciwu. Włącz dopiero po zmianie polityki prywatności i banera oraz akceptacji prawnika. Wszystkie te dane są w tym panelu także bez GA4.</p>';
 if ($c['ga4_secret'] === '') echo '<p style="margin-top:12px">Stan: <span class="status-bad">wyłączone</span> (brak klucza API).</p>';
 else {
   echo '<p style="margin-top:12px">Stan: <span class="status-ok">włączone</span>. Wysłano: ' . nf(isset($ga['wyslane']) ? $ga['wyslane'] : 0) . (isset($ga['ok_t']) ? ', ostatnio ' . h(date('d.m.Y H:i', (int) $ga['ok_t'])) : '') . '. Czeka na wysyłkę: ' . nf($pending) . '.</p>';
@@ -483,7 +505,7 @@ echo '<li>GA4 → Administracja → Definicje niestandardowe → Utwórz wymiary
 echo '<section class="card"><h2>Hasło do panelu</h2><form class="row" method="post">' . csrf_field() . '<input type="hidden" name="q" value="' . h(qs()) . '"><input type="hidden" name="a" value="haslo">';
 echo '<label>Obecne<input type="password" name="stare" autocomplete="current-password" required style="max-width:220px"></label><label>Nowe (min. 12 znaków)<input type="password" name="nowe" autocomplete="new-password" minlength="12" required style="max-width:220px"></label><label>Powtórz nowe<input type="password" name="nowe2" autocomplete="new-password" minlength="12" required style="max-width:220px"></label><button class="ghost" type="submit">Zmień hasło</button></form></section>';
 
-echo '<section class="card"><h2>Co jest zapisywane</h2><p class="muted">Data i godzina, parametry utm_* (małymi literami; adresy e-mail i numery telefonów są usuwane), domena strony odsyłającej (bez pełnego adresu), rodzaj urządzenia, system, aplikacja (np. Instagram) oraz informacja, czy w linku był identyfikator kliknięcia (bez jego wartości). Ten panel nie zapisuje adresu IP, pełnego opisu przeglądarki ani ciasteczek odwiedzających i nie da się z niego ustalić, kim była osoba, o ile linki kampanii nie zawierają danych osobowych. Dlatego liczy wejścia, a nie unikalnych użytkowników. Niezależnie od panelu serwer hostingu (home.pl) prowadzi własne dzienniki dostępu (adres IP, pełny adres, przeglądarka) według swoich zasad. Zapisy panelu są przechowywane przez bieżący miesiąc i ' . (int) $c['retencja_mies'] . ' poprzednich, potem usuwane (przy pierwszym wejściu w nowym miesiącu albo otwarciu panelu). iPady z Safari przedstawiają się jak komputer z macOS i tak są liczone.</p>';
+echo '<section class="card"><h2>Co jest zapisywane</h2><p class="muted">Data i godzina, parametry utm_* (małymi literami; adresy e-mail i numery telefonów są usuwane), domena strony odsyłającej (bez pełnego adresu), rodzaj urządzenia, system, aplikacja (np. Instagram) oraz informacja, czy w linku był identyfikator kliknięcia (bez jego wartości). Ten panel nie zapisuje adresu IP, pełnego opisu przeglądarki ani ciasteczek odwiedzających, więc sam nie pozwala ustalić, kim była osoba (o ile linki nie zawierają danych osobowych ani kodów pojedynczych odbiorców). Dlatego liczy wejścia, a nie unikalnych użytkowników. Niezależnie od panelu serwer hostingu (home.pl) prowadzi własne dzienniki dostępu (adres IP, pełny adres, przeglądarka, dokładny czas) według swoich zasad; w połączeniu z nimi wpisy dałoby się powiązać z adresem IP, dlatego traktuj te dane jak dane osobowe niskiego ryzyka. Zapisy panelu są przechowywane przez bieżący miesiąc i ' . (int) $c['retencja_mies'] . ' poprzednich, potem usuwane (przy pierwszym wejściu w nowym miesiącu albo otwarciu panelu). iPady z Safari przedstawiają się jak komputer z macOS i tak są liczone.</p>';
 echo '<p class="muted" style="margin-top:10px">Diagnostyka: PHP ' . h(PHP_VERSION) . ' · zapis danych: ' . ($writable ? '<span class="status-ok">tak</span>' : '<span class="status-bad">NIE</span>') . ' · wysyłka po odpowiedzi (PHP-FPM): ' . (function_exists('fastcgi_finish_request') ? 'tak' : 'nie') . ' · cURL: ' . (function_exists('curl_init') ? 'tak' : 'nie') . '</p></section>';
 echo '</div></body></html>';
 pg_cleanup();

@@ -12,10 +12,11 @@ if (!defined('PG_BILETY')) { http_response_code(403); exit; }
 define('PG_DIR', __DIR__);
 date_default_timezone_set('Europe/Warsaw');
 
-// Parametry przekazywane do eBilet oprócz utm_*: identyfikatory kliknięć.
-const PG_CLICK_IDS = ['fbclid', 'gclid', 'gbraid', 'wbraid', 'ttclid', 'msclkid'];
+// Parametry przekazywane do eBilet oprócz utm_*: identyfikatory kliknięć (i parametry automatycznego tagowania Google Ads).
+const PG_CLICK_IDS = ['fbclid', 'gclid', 'gbraid', 'wbraid', 'gad_source', 'gad_campaignid', 'dclid', 'ttclid', 'msclkid'];
 const PG_UTM_ORDER = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
-// Pierwsza linia plików danych: gdyby serwer zignorował .htaccess, plik się wykona i nic nie pokaże.
+// Pierwsza linia plików danych (wszystkie mają rozszerzenie .php): gdyby serwer zignorował .htaccess,
+// plik się wykona i nic nie pokaże.
 const PG_GUARD = "<?php exit; ?>\n";
 
 function pg_config() {
@@ -31,7 +32,8 @@ function pg_config() {
     'ga4_endpoint' => 'https://www.google-analytics.com',
     'panel_hash' => '',             // hash hasła do panelu (config.php albo zmiana w panelu)
     'retencja_mies' => 14,          // tyle pełnych miesięcy (plus bieżący) trzymamy zapisy wejść
-    'limit_minuta' => 300,          // powyżej tylu wejść na minutę zapisujemy tylko licznik (ochrona przed zalewem)
+    'limit_minuta' => 3000,         // powyżej tylu wejść na minutę zapisujemy tylko czas (ochrona przed zalewem)
+    'limit_pliku_mb' => 100,        // powyżej tej wielkości pliku miesiąca nie zapisujemy nic (ochrona dysku)
     'dane_dir' => __DIR__ . '/dane',
   ];
   $f = PG_DIR . '/config.php';
@@ -53,25 +55,12 @@ function pg_config_raw($k) {
   return isset($raw[$k]) ? $raw[$k] : null;
 }
 
-// Ustawienia z panelu (klucz GA4, nowe hasło, klucz do ograniczania logowań) w pliku PHP.
-function pg_settings() {
-  $f = pg_dane() . '/ustawienia.php';
-  if (!is_file($f)) return [];
-  $x = include $f;
-  return is_array($x) ? $x : [];
-}
-function pg_save_settings($u) {
-  pg_ensure_dir();
-  $f = pg_dane() . '/ustawienia.php';
-  $tmp = $f . '.' . bin2hex(random_bytes(4)) . '.tmp';
-  if (@file_put_contents($tmp, "<?php\nreturn " . var_export($u, true) . ";\n", LOCK_EX) === false) return false;
-  @chmod($tmp, 0600);
-  if (!@rename($tmp, $f)) { @unlink($tmp); return false; }
-  if (function_exists('opcache_invalidate')) @opcache_invalidate($f, true);
-  return true;
-}
+// Ustawienia z panelu (klucz GA4, nowe hasło, klucz do ograniczania logowań). Czytane jako dane (JSON),
+// nie przez include, więc pamięć podręczna PHP (opcache) nigdy nie poda starej wersji.
+function pg_settings() { return pg_read_state('ustawienia.php'); }
+function pg_save_settings($u) { return pg_write_state('ustawienia.php', $u); }
 
-// Mały plik stanu (JSON) w katalogu danych, z blokadą przy zapisie.
+// Mały plik stanu (JSON po linii PG_GUARD, nazwa *.php) w katalogu danych.
 function pg_read_state($name) {
   $f = pg_dane() . '/' . $name;
   if (!is_file($f)) return [];
@@ -85,7 +74,7 @@ function pg_write_state($name, $data) {
   pg_ensure_dir();
   $f = pg_dane() . '/' . $name;
   $tmp = $f . '.' . bin2hex(random_bytes(4)) . '.tmp';
-  if (@file_put_contents($tmp, PG_GUARD . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX) === false) return false;
+  if (@file_put_contents($tmp, PG_GUARD . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX) === false) { @unlink($tmp); return false; }
   @chmod($tmp, 0600);
   if (!@rename($tmp, $f)) { @unlink($tmp); return false; }
   return true;
@@ -109,6 +98,7 @@ function pg_ensure_dir() {
     @file_put_contents($d . '/.htaccess', "Require all denied\n");
     @file_put_contents($d . '/index.html', '');
   }
+  if (is_dir($d . '/sesje') && !is_file($d . '/sesje/index.html')) @file_put_contents($d . '/sesje/index.html', '');
 }
 
 function pg_cut($s, $max) {
@@ -128,7 +118,7 @@ function pg_params($get) {
   $utm = []; $click = [];
   foreach ($get as $k => $v) {
     if (!is_string($v) || !is_string($k)) continue;
-    $k = strtolower($k);
+    $k = preg_replace('/^(amp;)+/', '', strtolower($k)); // link wklejony z HTML: „&amp;utm_medium=”
     $v = pg_clean($v, 1000);
     if ($v === '') continue;
     if (preg_match('/^utm_[a-z0-9_]{1,30}$/', $k)) { if (count($utm) < 20 || isset($utm[$k])) $utm[$k] = $v; }
@@ -176,7 +166,7 @@ function pg_stat_value($v) {
 // Rodzaj klienta z user-agenta (sam user-agent nie jest zapisywany).
 function pg_client($ua) {
   $ua = (string) $ua;
-  $bot = $ua === '' || preg_match('~(?<!cu)bot\b|bot/|crawl|spider|slurp|facebookexternalhit|facebookcatalog|meta-external|whatsapp|telegram|discord|skypeuripreview|embedly|iframely|slack-imgproxy|cardyb|preview|google-|googleother|apis-google|mediapartners|curl/|wget/|python|go-http|java/|okhttp|axios|node-fetch|headlesschrome|lighthouse|pingdom|uptime|monitor~i', $ua);
+  $bot = $ua === '' || preg_match('~(?<!cu)bot\b|bot/|crawl|spider|slurp|facebookexternalhit|facebookcatalog|meta-external|whatsapp|discord|skypeuripreview|embedly|iframely|slack-imgproxy|cardyb|preview|google-|googleother|apis-google|mediapartners|curl/|wget/|python|go-http|java/|okhttp|axios|node-fetch|headlesschrome|lighthouse|pingdom|uptime|monitor~i', $ua);
   $app = '';
   if (preg_match('~Instagram~i', $ua)) $app = 'instagram';
   elseif (preg_match('~FBAN/Messenger|MessengerForiOS|Orca-Android~i', $ua)) $app = 'messenger';
@@ -211,7 +201,7 @@ function pg_record($utm, $click, $server) {
     'ref' => pg_ref_host(isset($server['HTTP_REFERER']) ? $server['HTTP_REFERER'] : ''),
     'dev' => $cl['dev'], 'os' => $cl['os'], 'app' => $cl['app'], 'bot' => $cl['bot'],
     'pre' => preg_match('~prefetch|prerender|preview~i', $purpose) ? 1 : 0,
-    'head' => (isset($server['REQUEST_METHOD']) && $server['REQUEST_METHOD'] === 'HEAD') ? 1 : 0,
+    'head' => (isset($server['REQUEST_METHOD']) && $server['REQUEST_METHOD'] !== 'GET') ? 1 : 0, // HEAD, POST, OPTIONS: nie odwiedziny
   ];
   // Sygnał „nie śledź” (Global Privacy Control / Do Not Track): wejście liczymy, ale nie wysyłamy do GA4.
   if ((isset($server['HTTP_SEC_GPC']) && trim($server['HTTP_SEC_GPC']) === '1') || (isset($server['HTTP_DNT']) && trim($server['HTTP_DNT']) === '1')) $r['gpc'] = 1;
@@ -221,16 +211,19 @@ function pg_record($utm, $click, $server) {
 
 function pg_log_file($ts = null) { return pg_dane() . '/wejscia-' . date('Y-m', $ts === null ? time() : $ts) . '.php'; }
 
-// Zapis wejścia. Powyżej limitu wejść na minutę zapisujemy tylko znacznik zalewu (bez parametrów).
+// Zapis wejścia. Powyżej limitu wejść na minutę zapisujemy tylko czas (znacznik zalewu, bez parametrów),
+// a gdy plik miesiąca przekroczy limit wielkości, nie zapisujemy nic (przekierowanie działa dalej).
 function pg_log($rec) {
   pg_ensure_dir();
+  $f = pg_log_file($rec['t']);
+  $cap = (float) pg_config()['limit_pliku_mb'];
+  if ($cap > 0 && is_file($f) && @filesize($f) > $cap * 1048576) return false;
   $minute = date('YmdHi', $rec['t']);
   $limit = (int) pg_config()['limit_minuta'];
-  $st = pg_update_state('minuta.json', function ($s) use ($minute) {
+  $st = pg_update_state('minuta.php', function ($s) use ($minute) {
     return ['m' => $minute, 'n' => (isset($s['m']) && $s['m'] === $minute ? (int) $s['n'] : 0) + 1];
   });
   if ($st !== null && $limit > 0 && $st['n'] > $limit) $rec = ['t' => $rec['t'], 'flood' => 1];
-  $f = pg_log_file($rec['t']);
   $new = !is_file($f);
   $line = json_encode($rec, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   if ($line === false) return false;
@@ -244,7 +237,7 @@ function pg_is_human($r) { return empty($r['bot']) && empty($r['pre']) && empty(
 
 // Rodzaj identyfikatora kliknięcia (fbclid Meta dodaje do reklam i do zwykłych linków w swoich aplikacjach).
 function pg_click_kind($r) {
-  if (!empty($r['gclid']) || !empty($r['gbraid']) || !empty($r['wbraid'])) return 'google';
+  foreach (['gclid', 'gbraid', 'wbraid', 'gad_source', 'gad_campaignid', 'dclid'] as $k) if (!empty($r[$k])) return 'google';
   if (!empty($r['fbclid'])) return 'meta';
   if (!empty($r['ttclid'])) return 'tiktok';
   if (!empty($r['msclkid'])) return 'microsoft';
@@ -252,7 +245,7 @@ function pg_click_kind($r) {
 }
 
 /* ---------- GA4 (Measurement Protocol) ---------- */
-// Zdarzenie bez danych osobowych: losowy client_id dla każdego wejścia (nigdzie nie zapisywany),
+// Zdarzenie bez identyfikatorów odwiedzającego: losowy client_id dla każdego wejścia (nigdzie nie zapisywany),
 // bez IP i user-agenta odwiedzającego (wysyła serwer), bez ciasteczek, zgody reklamowe „DENIED”.
 function pg_ga4_payload($r, $test = false) {
   $p = [];
@@ -266,7 +259,6 @@ function pg_ga4_payload($r, $test = false) {
   return [
     'client_id' => random_int(100000000, 2147483647) . '.' . $r['t'],
     'timestamp_micros' => (string) ($r['t'] * 1000000),
-    'non_personalized_ads' => true,
     'consent' => ['ad_user_data' => 'DENIED', 'ad_personalization' => 'DENIED'],
     'events' => [['name' => $test ? 'przekierowanie_bilety_test' : 'przekierowanie_bilety', 'params' => $p]],
   ];
@@ -322,8 +314,8 @@ function pg_ga4_flush($max = 20) {
   pg_ensure_dir();
   $lock = @fopen(pg_dane() . '/ga4.lock', 'c');
   if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) return 0;
-  $state = pg_read_state('ga4-stan.json');
-  if (!pg_write_state('ga4-stan.json', $state)) { flock($lock, LOCK_UN); fclose($lock); return 0; }
+  $state = pg_read_state('ga4-stan.php');
+  if (!pg_write_state('ga4-stan.php', $state)) { flock($lock, LOCK_UN); fclose($lock); return 0; }
   $offsets = isset($state['offsety']) && is_array($state['offsety']) ? $state['offsety'] : [];
   $sent = 0; $stop = false; $keep = [];
   foreach ($files as $f) {
@@ -350,14 +342,30 @@ function pg_ga4_flush($max = 20) {
   }
   $state['offsety'] = $keep;
   $state['wyslane'] = (isset($state['wyslane']) ? (int) $state['wyslane'] : 0) + $sent;
-  pg_write_state('ga4-stan.json', $state);
+  pg_write_state('ga4-stan.php', $state);
   flock($lock, LOCK_UN); fclose($lock);
   return $sent;
 }
 
+// Przy włączeniu wysyłki: zaczynamy od tego momentu (wcześniejsze wejścia nie trafiają do GA4).
+function pg_ga4_start() {
+  pg_ensure_dir();
+  $lock = @fopen(pg_dane() . '/ga4.lock', 'c');
+  if ($lock) flock($lock, LOCK_EX);
+  $state = pg_read_state('ga4-stan.php');
+  $offsets = [];
+  foreach (pg_ga4_files() as $f) { clearstatcache(true, $f); $offsets[basename($f)] = (int) @filesize($f); }
+  $state['offsety'] = $offsets;
+  $state['blad'] = '';
+  $state['od_t'] = time();
+  $ok = pg_write_state('ga4-stan.php', $state);
+  if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+  return $ok;
+}
+
 // Liczba wejść czekających na wysyłkę do GA4.
 function pg_ga4_pending() {
-  $state = pg_read_state('ga4-stan.json');
+  $state = pg_read_state('ga4-stan.php');
   $offsets = isset($state['offsety']) && is_array($state['offsety']) ? $state['offsety'] : [];
   $n = 0;
   foreach (pg_ga4_files() as $f) {
@@ -368,6 +376,19 @@ function pg_ga4_pending() {
     fclose($fh);
   }
   return $n;
+}
+
+// Data pierwszego zapisanego wejścia (RRRR-MM-DD) albo null, gdy nie ma żadnego.
+function pg_first_visit() {
+  $files = (array) glob(pg_dane() . '/wejscia-*.php');
+  sort($files);
+  foreach ($files as $f) {
+    $fh = @fopen($f, 'r');
+    if (!$fh) continue;
+    while (($line = fgets($fh)) !== false) { $r = json_decode($line, true); if (is_array($r) && isset($r['t'])) { fclose($fh); return date('Y-m-d', (int) $r['t']); } }
+    fclose($fh);
+  }
+  return null;
 }
 
 // Najstarszy przechowywany miesiąc (RRRR-MM): bieżący i retencja_mies pełnych miesięcy wstecz.

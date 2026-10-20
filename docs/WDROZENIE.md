@@ -23,7 +23,7 @@ Aktualizacja 20.10.2026: wgrana wersja po audycie (wszystkie 240 plików zgodne 
 
 ## 3. Aktualizacja strony
 
-1. `npm run dist` → `dist/padreguilherme.pl.zip` (246 plików, ok. 18 MB; stan 20.10.2026, z `/bilety` i panelem statystyk).
+1. `npm run dist` → `dist/padreguilherme.pl.zip` (246 plików, ok. 18 MB; stan 20.10.2026, z `/bilety` i panelem statystyk). Gdy zmienia się tylko `/bilety` i panel, wystarczy mała paczka z sekcji 3a.
 2. Rozpakuj i wgraj **zawartość** do `/public_html` przez FileZillę, z nadpisaniem. Po lewej musi być rozpakowany folder paczki (nie inny projekt). Nie ruszaj `ebiletconfidential` ani `tmp`.
 3. Pliki ukryte są w paczce: `.htaccess` w katalogu głównym, `_bilety/.htaccess` i `statystyki/.htaccess`. Na Macu: w Finderze Cmd+Shift+. pokazuje ukryte pliki.
 4. Nigdy nie usuwaj na serwerze folderu `_bilety/dane` (statystyki, ustawienia panelu). Paczka go nie zawiera, więc wgranie z nadpisaniem go nie rusza.
@@ -42,25 +42,43 @@ Aktualizacja 20.10.2026: wgrana wersja po audycie (wszystkie 240 plików zgodne 
 **Przekierowanie** (`bilety.php`, decyzja Marka 20.10.2026): od razu 302 do
 `https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622`.
 - Zawsze `partner=l2lsp` (nawet gdy link ma inny `partner`).
-- Parametry kampanii z linku przechodzą dalej bez zmian: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `utm_id` i inne `utm_*`. `utm_source=direct` jest dopisywany tylko, gdy link go nie ma (dzięki temu w eBilet widać źródło kampanii; jeśli ma być zawsze `direct`, to mała zmiana w `pg_target` w `server/_bilety/lib.php`).
-- Identyfikatory kliknięć przechodzą dalej: `fbclid`, `gclid`, `gbraid`, `wbraid`, `ttclid`, `msclkid`. Inne parametry są pomijane.
+- Parametry kampanii z linku przechodzą dalej bez zmian: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `utm_id` i inne `utm_*`. `utm_source=direct` jest dopisywany tylko, gdy link go nie ma (dzięki temu w eBilet widać źródło kampanii; jeśli ma być zawsze `direct`, to mała zmiana w `pg_target` w `server/_bilety/lib.php`). Do potwierdzenia z Markiem/eBilet: prowizja partnera nie zależy od `utm_source=direct`.
+- Identyfikatory kliknięć przechodzą dalej: `fbclid`, `gclid`, `gbraid`, `wbraid`, `gad_source`, `gad_campaignid`, `dclid`, `ttclid`, `msclkid`. Inne parametry są pomijane. eBilet zachowuje je wszystkie (sprawdzone 20.10, bez dalszego przekierowania).
 - Adres bez „/” przed „?”, bo wersja z ukośnikiem przekierowuje w eBilet i gubi `utm_source` (sprawdzone 20.10).
-- Czas odpowiedzi ok. 2 ms (test lokalny na Apache + PHP-FPM, 100 wejść, p95 3,5 ms). Zapis do statystyk i wysyłka do GA4 nie opóźniają przekierowania; gdy cokolwiek zawiedzie, przekierowanie działa dalej.
+- Czas odpowiedzi ok. 2-5 ms (test lokalny na Apache + PHP-FPM). Z PHP-FPM odpowiedź wychodzi przed zapisem do statystyk; gdy cokolwiek zawiedzie (brak pliku, pełny dysk, brak zapisu), przekierowanie działa dalej.
+- **Google Ads**: nie ustawiaj `padreguilherme.pl/bilety` jako adresu docelowego reklamy. Google odrzuca reklamy, których adres przekierowuje do innej domeny („Niezgodność strony docelowej”). W Google Ads użyj bezpośrednio linku eBilet (z `partner=l2lsp` i własnymi UTM) albo strony głównej; takie kliknięcia nie trafią do panelu. `/bilety` jest dla reklam Meta/Instagram, bio, relacji, newslettera, kodów QR i druku.
 
 **Statystyki**: https://padreguilherme.pl/statystyki/ (hasło: przekazane osobno, nie w repozytorium; można je zmienić w panelu).
-- Liczba wejść (dziennie, wykres i tabela), zakres dat, źródło, medium, kampania, treść (kreacja), połączenie źródło/medium/kampania, strona odsyłająca, aplikacja (Instagram, Facebook, Messenger, TikTok...), urządzenie, system, identyfikator kliknięcia (Meta, Google, TikTok, Microsoft), ostatnie 50 wejść, filtry po kliknięciu wartości, eksport CSV (Excel), generator linków kampanii.
-- Roboty, podglądy linków (WhatsApp, Messenger, Slack...), prefetch i zapytania HEAD są zapisywane osobno i nie liczą się do wejść.
-- Prywatność: bez adresu IP, bez pełnego user-agenta, bez ciasteczek odwiedzających, bez wartości `fbclid`/`gclid` (tylko „był”). Wartości UTM małymi literami, adresy e-mail i numery telefonów są usuwane ze statystyk. Zapisy: bieżący miesiąc i 14 poprzednich.
-- Pliki: `_bilety/lib.php` (logika), `_bilety/config.php` (hash hasła, generowany przy budowie z `server/_bilety/config.local.php`, którego nie ma w repozytorium), `_bilety/dane/` (tworzony przez PHP przy pierwszym wejściu: wejścia `wejscia-RRRR-MM.php`, ustawienia panelu, sesje). Dostęp z internetu do `_bilety` jest zablokowany (`.htaccess`), a pliki danych zaczynają się od `<?php exit; ?>`, więc nawet bez `.htaccess` nic nie pokazują.
+- Liczba wejść (dziennie, wykres i tabela), zakresy: dziś, wczoraj, ten tydzień, 7 i 30 dni, ten miesiąc, wszystko (od pierwszego wejścia) albo własne daty; źródło, medium, kampania, treść (kreacja), zestawienie źródło / medium / kampania / treść, strona odsyłająca, aplikacja (Instagram, Facebook, Messenger, TikTok...), urządzenie, system, identyfikator kliknięcia (Meta, Google, TikTok, Microsoft), ostatnie 50 wejść, filtry po kliknięciu wartości, eksport CSV (Excel), generator linków kampanii.
+- Roboty, podglądy linków (WhatsApp, Messenger, Slack...), prefetch i zapytania inne niż GET (np. HEAD) są zapisywane osobno i nie liczą się do wejść. CSV zawiera je z oznaczeniem w kolumnie `pominiete` (suma w panelu = wiersze z pustą kolumną `pominiete`).
+- W pierwszych dniach porównaj liczby z Meta („Kliknięcia linku”, „Wyświetlenia strony docelowej”): aplikacje Meta czasem wczytują link z wyprzedzeniem, co może przesunąć część kliknięć do „podglądów”.
+- Ochrona przed zalewem: powyżej 3000 wejść na minutę zapisywany jest tylko czas (bez parametrów, w panelu „zalew”), a gdy plik miesiąca przekroczy 100 MB, wejścia nie są zapisywane. Przekierowanie działa zawsze.
+- Prywatność: bez adresu IP, bez pełnego user-agenta, bez ciasteczek odwiedzających, bez wartości `fbclid`/`gclid` (tylko „był”). Wartości UTM małymi literami, adresy e-mail i numery telefonów (z „+” albo w grupach 3-3-3) są usuwane ze statystyk. Zapisy: bieżący miesiąc i 14 poprzednich. **Nigdy nie wpisuj w linki danych osobowych ani kodów pojedynczych odbiorców** (numer klienta, znaczniki newslettera typu `*|UNIQID|*` czy `{{contact.id}}`): jeden link na grupę odbiorców. Same ciągi cyfr nie są usuwane.
+- Pliki: `_bilety/lib.php` (logika), `_bilety/config.php` (hash hasła, generowany przy budowie z `server/_bilety/config.local.php`, którego nie ma w repozytorium), `_bilety/dane/` (tworzony przez PHP przy pierwszym wejściu: wejścia `wejscia-RRRR-MM.php`, ustawienia panelu `ustawienia.php`, stany `ga4-stan.php`, `logowania.php`, `minuta.php`, sesje w `sesje/`). Dostęp z internetu do `_bilety` jest zablokowany (`.htaccess`, sprawdzone, że home.pl je stosuje); dodatkowo pliki danych mają rozszerzenie `.php` i zaczynają się od `<?php exit; ?>`, więc nawet bez `.htaccess` nic nie pokazują.
 - Logowanie: 5 nieudanych prób z jednego adresu = 15 minut przerwy (łącznie najwyżej 50 prób na 15 minut). Zmiana hasła wylogowuje inne urządzenia.
+- Wymagane PHP 7.0 lub nowsze (zalecane 8.x; sprawdzone na 7.0-8.5). Na starszym PHP przekierowanie działa, ale statystyki nie.
 
-**GA4 (opcjonalnie, domyślnie wyłączone)**: po wpisaniu w panelu klucza API Measurement Protocol każde wejście (bez robotów, podglądów i sygnału „nie śledź”) trafia do GA4 G-MQFK04FB3F jako zdarzenie `przekierowanie_bilety` z parametrami `redirect_source`, `redirect_medium`, `redirect_campaign`, `redirect_content`, `redirect_term`, `redirect_referrer`, `redirect_app`, `redirect_device`, `redirect_click_id`. Wysyła serwer: bez ciasteczek, IP i przeglądarki odwiedzającego, z losowym identyfikatorem dla każdego wejścia i zgodami reklamowymi „DENIED”. Włączyć dopiero po aktualizacji polityki prywatności (DO-POTWIERDZENIA, punkt G). Bez PHP-FPM wysyłka nie dzieje się sama: przycisk „Wyślij zaległe” co najmniej raz na 3 dni (GA4 przyjmuje zdarzenia do 72 godzin wstecz).
+**GA4 (opcjonalnie, domyślnie wyłączone)**: po wpisaniu w panelu klucza API Measurement Protocol każde wejście od tej chwili (bez robotów, podglądów i sygnału „nie śledź”) trafia do GA4 G-MQFK04FB3F jako zdarzenie `przekierowanie_bilety` z parametrami `redirect_source`, `redirect_medium`, `redirect_campaign`, `redirect_content`, `redirect_term`, `redirect_referrer`, `redirect_app`, `redirect_device`, `redirect_click_id`. Wysyła serwer: bez ciasteczek, IP i przeglądarki odwiedzającego, z losowym identyfikatorem dla każdego wejścia i zgodami reklamowymi „DENIED”. Google otrzymuje jednak czas i parametry kampanii każdego wejścia, także osób, które na stronie odmówiły zgody (banera przy /bilety nie ma). Włączyć dopiero po zmianie polityki prywatności i banera oraz akceptacji prawnika (DO-POTWIERDZENIA, punkt G; projekt tekstu: docs/PRYWATNOSC-BILETY.md). GA4 niewiele tu dodaje: każde wejście to w GA4 osobny użytkownik bez sesji, a wszystkie dane są w panelu. Bez PHP-FPM wysyłka nie dzieje się sama: przycisk „Wyślij zaległe” co najmniej raz na 3 dni (GA4 przyjmuje zdarzenia do 72 godzin wstecz).
+
+**Wgranie tej zmiany (20.10.2026)**: paczka `padre-bilety-statystyki.zip` (7 plików: `.htaccess`, `bilety.php`, `_bilety/.htaccess`, `_bilety/lib.php`, `_bilety/config.php`, `statystyki/.htaccess`, `statystyki/index.php`). Pozostałe pliki na serwerze są aktualne. Nie wgrywaj roboczego folderu `dist/padreguilherme.pl` z komputera dewelopera bez ponownego `npm run dist` (w czasie testów jego `config.php` wskazuje lokalną atrapę GA4).
+1. Przed wgraniem: w panelu home.pl sprawdź wersję PHP domeny (8.x) i pobierz z serwera obecny `/public_html/.htaccess` jako kopię (np. `htaccess-kopia-20-10.txt` na swoim komputerze).
+2. Wgraj zawartość paczki do `/public_html` z nadpisaniem, z plikami ukrytymi.
 
 **Po wgraniu sprawdź** (raz, przed przepięciem kampanii):
-1. `curl -sI 'https://padreguilherme.pl/bilety?utm_source=test&utm_campaign=sprawdzenie'`: `302`, `Cache-Control: no-store, private`, `X-Robots-Tag: noindex, nofollow` (wysyła je tylko `bilety.php`; ich brak oznacza przekierowanie awaryjne z `.htaccess`, bez statystyk) i w `Location` `utm_campaign=sprawdzenie`.
-2. Panel `/statystyki/`: wejście „test / sprawdzenie” widoczne, na dole „zapis danych: tak”. Jeśli „NIE”: folder `_bilety` musi być zapisywalny dla PHP (w FileZilli: prawy przycisk → Uprawnienia pliku → 755 dla `_bilety`).
-3. Diagnostyka w panelu: „wysyłka po odpowiedzi (PHP-FPM): tak/nie” i „cURL: tak/nie” (ważne tylko dla GA4).
-4. Testowe wejścia można odfiltrować w panelu (źródło `test`); nie wpływają na kampanię.
+1. W zwykłej przeglądarce (telefon albo komputer, nie curl) otwórz `https://padreguilherme.pl/bilety?utm_source=test&utm_campaign=sprawdzenie`. Otwiera się eBilet; w pasku adresu ma być `partner=l2lsp&utm_source=test&utm_campaign=sprawdzenie`.
+2. Panel `https://padreguilherme.pl/statystyki/`: w „Ostatnie wejścia” jest `test / sprawdzenie`, na dole „zapis danych: tak”. Jeśli „NIE”: napisz do pomocy home.pl, że PHP musi móc zapisywać w folderze `_bilety` (nie ustawiaj 777).
+3. Jeśli w panelu nie ma wejścia, a przekierowanie działa, to działa przekierowanie awaryjne z `.htaccess` (bez statystyk): sprawdź, czy wgrał się `bilety.php` i nowy `.htaccess`. Technicznie: `curl -s -o /dev/null -D - -A 'Mozilla/5.0 (test)' 'https://padreguilherme.pl/bilety?utm_source=test'` pokazuje `Cache-Control: no-store, private` tylko z `bilety.php` (zapytanie `curl -sI` też działa, ale w panelu liczy się jako robot).
+4. Strona główna `https://padreguilherme.pl/` i `https://padreguilherme.pl/ebiletconfidential/` otwierają się jak wcześniej.
+5. W FileZilli widać folder `_bilety/dane` i da się w nim usunąć plik (potrzebne do odblokowania panelu, niżej).
+6. Wejścia testowe zostają w sumach; obejrzysz je filtrem po źródle `test`. Diagnostyka na dole panelu: „wysyłka po odpowiedzi (PHP-FPM)” i „cURL” mają znaczenie tylko dla GA4.
+
+**Gdy coś nie działa (w trakcie kampanii)**
+- `/bilety` działa źle: usuń na serwerze `bilety.php` (nie zmieniaj nazwy na np. `.off`, bo wtedy kod byłby widoczny). `.htaccess` sam przekierowuje do eBilet z parametrami, tylko bez statystyk.
+- Cała strona pokazuje błąd: wgraj z powrotem kopię `.htaccess` z punktu 1 (zmień nazwę na `.htaccess`).
+- Panel zablokowany po nieudanych próbach: odczekaj 15 minut albo usuń przez FTP plik `_bilety/dane/logowania.php`.
+- Zapomniane hasło: usuń przez FTP `_bilety/dane/ustawienia.php` (wraca hasło przekazane przy wdrożeniu; usuwa też zapisany klucz GA4).
+- Nigdy nie usuwaj całego folderu `_bilety/dane` (wejścia i ustawienia).
+- Po kampanii (np. do 31.05.2027): pobierz CSV i usuń tylko pliki `_bilety/dane/wejscia-*.php`.
 
 ## 4. Po starcie (SEO)
 

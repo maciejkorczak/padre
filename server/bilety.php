@@ -21,25 +21,25 @@ if (!$ready) {
   // Awaryjnie (bez lib.php): te same parametry kampanii i identyfikatory kliknięć, bez statystyk.
   $q = ['partner' => 'l2lsp'];
   foreach ($_GET as $k => $v) {
-    if (is_string($k) && is_string($v) && preg_match('~^(utm_[a-z0-9_]{1,30}|fbclid|gclid|gbraid|wbraid|ttclid|msclkid)$~i', $k)) $q[strtolower($k)] = substr($v, 0, 1000);
+    $k = is_string($k) ? preg_replace('/^(amp;)+/i', '', $k) : $k;
+    if (is_string($k) && is_string($v) && $v !== '' && preg_match('~^(utm_[a-z0-9_]{1,30}|fbclid|gclid|gbraid|wbraid|gad_source|gad_campaignid|dclid|ttclid|msclkid)$~i', $k)) $q[strtolower($k)] = substr($v, 0, 1000);
   }
   if (!isset($q['utm_source']) || $q['utm_source'] === '') $q['utm_source'] = 'direct';
   $target = 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?' . http_build_query($q, '', '&', PHP_QUERY_RFC3986) . '#padre-guilherme_155685,1622';
 }
 
-while (ob_get_level()) ob_end_clean();
+while (ob_get_level() > 0 && @ob_end_clean()) {}
 header('Location: ' . $target, true, 302);
 header('Cache-Control: no-store, private');
 header('X-Robots-Tag: noindex, nofollow');
 header('Content-Length: 0');
 
 if ($ready) {
+  // Z PHP-FPM odpowiedź idzie do odwiedzającego od razu; zapis i wysyłka do GA4 dzieją się już po niej.
+  $fpm = function_exists('fastcgi_finish_request');
+  if ($fpm) fastcgi_finish_request();
   ob_start();
   try { pg_log(pg_record($utm, $click, $_SERVER)); } catch (Throwable $e) { /* statystyki nie blokują przekierowania */ }
+  if ($fpm) { try { pg_ga4_flush(5); } catch (Throwable $e) { } }
   ob_end_clean();
-  // Odpowiedź jest już u odwiedzającego; wysyłka do GA4 dzieje się po jej zakończeniu.
-  if (function_exists('fastcgi_finish_request')) {
-    fastcgi_finish_request();
-    try { pg_ga4_flush(5); } catch (Throwable $e) { }
-  }
 }

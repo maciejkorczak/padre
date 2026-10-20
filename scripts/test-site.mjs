@@ -112,7 +112,7 @@ check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy L
   const php = ht.indexOf('RewriteRule ^bilety/?$ /bilety.php [NC,END]');
   const rules = [`${base}&%{QUERY_STRING}${frag}`, `${base}&utm_source=direct&%{QUERY_STRING}${frag}`, `${base}&utm_source=direct${frag}`].map((t) => ht.indexOf(`RewriteRule ^bilety/?$ "${t}" [NC,NE,R=302,L]`));
   check('.htaccess: /bilety obsługuje bilety.php (END), przed regułami www/https', php > 0 && php < canon);
-  check('.htaccess: awaryjne przekierowanie z parametrami z linku (bez „/” przed „?”)', rules.every((i) => i > php && i < canon) && /\(\?:\^\|&\)utm_source= \[NC\]/.test(ht));
+  check('.htaccess: awaryjne przekierowanie z parametrami z linku (bez „/” przed „?”, bez drugiego partner=)', rules.every((i) => i > php && i < canon) && /\(\?:\^\|&\)utm_source= \[NC\]/.test(ht) && ht.split('RewriteCond %{QUERY_STRING} !(?:^|&)partner= [NC]').length === 3);
 }
 // Myślniki: tylko zwykły „-” (także w treściach z CSS i w tekstach wstawianych przez JS).
 {
