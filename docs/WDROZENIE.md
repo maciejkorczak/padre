@@ -4,25 +4,27 @@ Stan na 19.10.2026, po uruchomieniu strony.
 
 ## 1. Stan (19.10.2026, 21:30): strona działa
 
+Aktualizacja 20.10.2026: wgrana wersja po audycie (wszystkie 240 plików zgodne z paczką, `/bilety` działa, IndexNow zgłoszony: HTTP 202).
+
 | Co | Stan |
 |----|------|
 | Adres | **https://padreguilherme.pl** (www, http i /index.html przekierowują 301 na ten adres) |
 | DNS | A `46.242.241.87` (SERWER2670951), `www` → CNAME na domenę główną, TTL 60 s. Potwierdzone w Google DNS i Cloudflare. |
 | Certyfikat | homeSSL (home.pl) dla padreguilherme.pl i www, ważny do 22.03.2027, odnawiany w ramach subskrypcji do 5.09.2027. |
-| Serwer | SERWER2670951, Ustawienia WWW: „Główny katalog na serwerze”. Strona leży bezpośrednio w `/`. |
-| Inne foldery w `/` | `ebiletconfidential` (strona Press Accreditations) i `tmp` (systemowy): nie usuwać. `ebiletconfidential` otwiera się też pod padreguilherme.pl/ebiletconfidential/. |
+| Serwer | SERWER2670951, Ustawienia WWW: „Główny katalog na serwerze”. W FileZilli (konto `padre@padreguilherme.pl`) to folder **`/public_html`** (stan 20.10.2026). |
+| Inne foldery w `/public_html` | `ebiletconfidential` (strona Press Accreditations) i `tmp` (systemowy): nie usuwać. `ebiletconfidential` otwiera się też pod padreguilherme.pl/ebiletconfidential/. |
 | WAF | Wyłączony (strona statyczna, bez PHP i bazy). |
 
 ## 2. Dostęp FTP
 
 - Serwer `serwer2670951.hosting-home.pl`, port 21 (FTPS), login `padre@padreguilherme.pl` (małymi literami).
-- Konto widzi katalog główny `/` serwera, czyli katalog strony.
+- Po zalogowaniu FileZilla pokazuje `/` z folderami `backup`, `logs`, `padreguilherme`, `public_html`, `svn_repo`. **Strona jest w `/public_html`** (obok `ebiletconfidential` i `tmp`). Folder `/padreguilherme` to pozostałość po pierwszej próbie z 19.10, nieużywana przez domenę: nie wgrywać tam plików.
 - Menedżer plików home.pl (WebFTP) pokazuje osobne drzewo z folderem `/padreguilherme` z pierwszej próby („podkatalog z separacją”). Ten folder nie jest używany przez domenę.
 
 ## 3. Aktualizacja strony
 
 1. `npm run dist` → `dist/padreguilherme.pl.zip` (240 plików, ok. 18 MB; stan 20.10.2026).
-2. Rozpakuj i wgraj **zawartość** do `/` przez FileZillę, z nadpisaniem. Nie ruszaj `ebiletconfidential` ani `tmp`.
+2. Rozpakuj i wgraj **zawartość** do `/public_html` przez FileZillę, z nadpisaniem. Po lewej musi być rozpakowany folder paczki (nie inny projekt). Nie ruszaj `ebiletconfidential` ani `tmp`.
 3. `.htaccess` jest w paczce (plik ukryty). Na Macu: w Finderze Cmd+Shift+. pokazuje ukryte pliki.
 
 `.htaccess` (sprawdzony na Apache 2.4 i na żywym serwerze):
