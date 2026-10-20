@@ -21,7 +21,7 @@ Stan na 19.10.2026, po uruchomieniu strony.
 
 ## 3. Aktualizacja strony
 
-1. `npm run dist` → `dist/padreguilherme.pl.zip` (201 plików, ok. 12 MB).
+1. `npm run dist` → `dist/padreguilherme.pl.zip` (240 plików, ok. 18 MB; stan 20.10.2026).
 2. Rozpakuj i wgraj **zawartość** do `/` przez FileZillę, z nadpisaniem. Nie ruszaj `ebiletconfidential` ani `tmp`.
 3. `.htaccess` jest w paczce (plik ukryty). Na Macu: w Finderze Cmd+Shift+. pokazuje ukryte pliki.
 
