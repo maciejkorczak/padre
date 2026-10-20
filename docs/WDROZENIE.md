@@ -26,6 +26,9 @@ Stan na 19.10.2026, po uruchomieniu strony.
 3. `.htaccess` jest w paczce (plik ukryty). Na Macu: w Finderze Cmd+Shift+. pokazuje ukryte pliki.
 
 `.htaccess` (sprawdzony na Apache 2.4 i na żywym serwerze):
+- **krótki adres dla kampanii** `https://padreguilherme.pl/bilety` (też `/bilety/`, www, http, wielkie litery) przekierowuje (302) od razu do
+  `https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622` (decyzja Marka 20.10.2026).
+  Adres bez „/” przed „?”, bo wersja z ukośnikiem przekierowuje w eBilet i gubi `utm_source` (sprawdzone 20.10). Identyfikator kliknięcia reklamy (`fbclid`, `gclid`) przechodzi dalej; inne parametry (np. własne UTM agencji) nie. Wejścia przez `/bilety` nie trafiają do GA4 strony (przekierowanie następuje przed załadowaniem strony); mierzy je piksel i statystyki eBilet,
 - przekierowuje `http://` i `www.` na `https://padreguilherme.pl/` (301, parametry UTM zostają),
 - przekierowuje `/index.html` na `/`,
 - ustawia typy plików AVIF i WOFF2,

@@ -102,6 +102,13 @@ check('FAQ: kod kreskowy zamiast QR, bez pytań o odwołanie i zgubione rzeczy',
 check('Końcowe CTA: „Bilety już w sprzedaży.”', html.includes('Bilety już w sprzedaży.'));
 check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy Live2Listen)', html.includes('href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener" data-accreditation>'));
 
+// Krótki adres dla kampanii: /bilety -> link partnera L2L z utm_source=direct (302, „#” bez kodowania, przed regułami www/https).
+{
+  const ht = await readFile(path.join(root, '.htaccess'), 'utf8');
+  const target = 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622';
+  const rule = ht.indexOf(`RewriteRule ^bilety/?$ "${target}" [NC,NE,R=302,L]`);
+  check('.htaccess: /bilety przekierowuje do linku partnera z utm_source=direct (bez „/” przed „?”)', rule > 0 && rule < ht.indexOf('RewriteCond %{HTTP_HOST} ^www') && /utm_source=direct&%1=%2#padre-guilherme_155685,1622" \[NC,NE,R=302,L\]/.test(ht));
+}
 // Myślniki: tylko zwykły „-” (także w treściach z CSS i w tekstach wstawianych przez JS).
 {
   const css = await readFile(path.join(root, 'assets/css/main.css'), 'utf8');

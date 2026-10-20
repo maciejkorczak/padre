@@ -4,6 +4,18 @@
 # Reguły działają tylko dla padreguilherme.pl, więc na adresie testowym nic nie przekierowują.
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # Krótki adres dla kampanii (Marek, 20.10.2026): /bilety -> sprzedaż biletów z linkiem partnera L2L
+  # i utm_source=direct. Przed regułami https/www, więc z każdego wariantu adresu to jeden krok.
+  # Adres eBilet bez „/” przed „?”: wersja z ukośnikiem przekierowuje w eBilet i gubi utm_source.
+  # 302 (tymczasowe): przeglądarki nie zapamiętują celu na stałe. NE: „#” zostaje „#”.
+  # Identyfikator kliknięcia reklamy (fbclid z Meta, gclid z Google) przechodzi dalej do eBilet,
+  # żeby piksel eBilet mógł przypisać zakup do reklamy. Inne parametry nie są przenoszone.
+  RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
+  RewriteCond %{QUERY_STRING} (?:^|&)(fbclid|gclid)=([A-Za-z0-9._-]+) [NC]
+  RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct&%1=%2#padre-guilherme_155685,1622" [NC,NE,R=302,L]
+  RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
+  RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct#padre-guilherme_155685,1622" [NC,NE,R=302,L]
+
   RewriteCond %{HTTP_HOST} ^www\.padreguilherme\.pl$ [NC]
   RewriteRule ^ https://padreguilherme.pl%{REQUEST_URI} [L,R=301]
   RewriteCond %{HTTP_HOST} ^padreguilherme\.pl$ [NC]
