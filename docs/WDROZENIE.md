@@ -6,6 +6,8 @@ Stan na 19.10.2026, po uruchomieniu strony.
 
 Aktualizacja 20.10.2026: wgrana wersja po audycie (wszystkie 240 plików zgodne z paczką, `/bilety` działa, IndexNow zgłoszony: HTTP 202).
 
+Aktualizacja 21.10.2026: wgrane `/bilety` ze statystykami (paczka 7 plików). Sprawdzone na żywo: 302 z `partner=l2lsp`, wszystkimi `utm_*`, `fbclid` i `gclid` (też `/bilety/`, `/BILETY`, www, http), `Cache-Control: no-store`, `_bilety` zablokowane (403), panel `/statystyki/` działa (logowanie, zapis wejść, CSV), diagnostyka: PHP 8.5.0, zapis danych: tak, PHP-FPM: tak, cURL: tak, GA4 wyłączone. 5 wejść testowych z 21.10 ma źródło `test_wdrozenie` (jedno bez parametrów: `direct`).
+
 | Co | Stan |
 |----|------|
 | Adres | **https://padreguilherme.pl** (www, http i /index.html przekierowują 301 na ten adres) |
