@@ -57,8 +57,8 @@ function pg_config_raw($k) {
 
 // Ustawienia z panelu (klucz GA4, nowe hasło, klucz do ograniczania logowań). Czytane jako dane (JSON),
 // nie przez include, więc pamięć podręczna PHP (opcache) nigdy nie poda starej wersji.
+// Zmiany tylko przez pg_update_state('ustawienia.php', ...) (pod blokadą).
 function pg_settings() { return pg_read_state('ustawienia.php'); }
-function pg_save_settings($u) { return pg_write_state('ustawienia.php', $u); }
 
 // Mały plik stanu (JSON po linii PG_GUARD, nazwa *.php) w katalogu danych.
 function pg_read_state($name) {
@@ -216,20 +216,27 @@ function pg_log_file($ts = null) { return pg_dane() . '/wejscia-' . date('Y-m', 
 function pg_log($rec) {
   pg_ensure_dir();
   $f = pg_log_file($rec['t']);
-  $cap = (float) pg_config()['limit_pliku_mb'];
-  if ($cap > 0 && is_file($f) && @filesize($f) > $cap * 1048576) return false;
+  if (pg_cap_reached($f)) return false;
   $minute = date('YmdHi', $rec['t']);
   $limit = (int) pg_config()['limit_minuta'];
   $st = pg_update_state('minuta.php', function ($s) use ($minute) {
     return ['m' => $minute, 'n' => (isset($s['m']) && $s['m'] === $minute ? (int) $s['n'] : 0) + 1];
   });
   if ($st !== null && $limit > 0 && $st['n'] > $limit) $rec = ['t' => $rec['t'], 'flood' => 1];
-  $new = !is_file($f);
+  clearstatcache(true, $f);
+  $new = !is_file($f) || @filesize($f) === 0; // pusty plik po nieudanym zapisie też dostaje linię PG_GUARD
   $line = json_encode($rec, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   if ($line === false) return false;
   $ok = @file_put_contents($f, ($new ? PG_GUARD : '') . $line . "\n", FILE_APPEND | LOCK_EX) !== false;
   if ($new) pg_cleanup(); // nowy miesiąc: usuń zapisy starsze niż retencja
   return $ok;
+}
+
+// Czy plik wejść osiągnął limit wielkości (wtedy nowe wejścia nie są zapisywane).
+function pg_cap_reached($f = null) {
+  $f = $f === null ? pg_log_file() : $f;
+  $cap = (float) pg_config()['limit_pliku_mb'];
+  return $cap > 0 && is_file($f) && @filesize($f) > $cap * 1048576;
 }
 
 // Czy wejście liczy się jako odwiedziny człowieka (bez robotów, podglądów linków, HEAD i zalewu).
@@ -305,7 +312,8 @@ function pg_ga4_files() {
 }
 
 // Wysyła do GA4 zaległe wejścia (najwyżej $max naraz, z ostatnich 71 godzin). Postęp: offset dla każdego
-// pliku w ga4-stan.json. Jeden proces naraz. Gdy stanu nie da się zapisać, nic nie wysyła (bez duplikatów).
+// pliku w ga4-stan.php. Jeden proces naraz. Gdy stanu nie da się zapisać, nic nie wysyła (bez duplikatów).
+// Nigdy nie wysyła wejść sprzed włączenia wysyłki (od_t).
 function pg_ga4_flush($max = 20) {
   $c = pg_config();
   if ($c['ga4_secret'] === '' || $c['ga4_id'] === '') return 0;
@@ -317,6 +325,7 @@ function pg_ga4_flush($max = 20) {
   $state = pg_read_state('ga4-stan.php');
   if (!pg_write_state('ga4-stan.php', $state)) { flock($lock, LOCK_UN); fclose($lock); return 0; }
   $offsets = isset($state['offsety']) && is_array($state['offsety']) ? $state['offsety'] : [];
+  $from = isset($state['od_t']) ? (int) $state['od_t'] : 0;
   $sent = 0; $stop = false; $keep = [];
   foreach ($files as $f) {
     $key = basename($f);
@@ -327,7 +336,7 @@ function pg_ga4_flush($max = 20) {
       while (!$stop && $sent < $max && ($line = fgets($fh)) !== false) {
         if (substr($line, -1) !== "\n") break; // linia jeszcze w trakcie zapisu
         $r = json_decode($line, true);
-        if (is_array($r) && isset($r['t']) && pg_is_human($r) && empty($r['gpc']) && time() - (int) $r['t'] < 71 * 3600) {
+        if (is_array($r) && isset($r['t']) && pg_is_human($r) && empty($r['gpc']) && (int) $r['t'] >= $from && time() - (int) $r['t'] < 71 * 3600) {
           $res = pg_ga4_send($r);
           if ($res !== true) { $state['blad'] = $res; $state['blad_t'] = time(); $stop = true; break; }
           $sent++;
@@ -367,12 +376,13 @@ function pg_ga4_start() {
 function pg_ga4_pending() {
   $state = pg_read_state('ga4-stan.php');
   $offsets = isset($state['offsety']) && is_array($state['offsety']) ? $state['offsety'] : [];
+  $from = isset($state['od_t']) ? (int) $state['od_t'] : 0;
   $n = 0;
   foreach (pg_ga4_files() as $f) {
     $fh = @fopen($f, 'r');
     if (!$fh) continue;
     fseek($fh, isset($offsets[basename($f)]) ? (int) $offsets[basename($f)] : 0);
-    while (($line = fgets($fh)) !== false) { $r = json_decode($line, true); if (is_array($r) && isset($r['t']) && pg_is_human($r) && empty($r['gpc']) && time() - (int) $r['t'] < 71 * 3600) $n++; }
+    while (($line = fgets($fh)) !== false) { $r = json_decode($line, true); if (is_array($r) && isset($r['t']) && pg_is_human($r) && empty($r['gpc']) && (int) $r['t'] >= $from && time() - (int) $r['t'] < 71 * 3600) $n++; }
     fclose($fh);
   }
   return $n;

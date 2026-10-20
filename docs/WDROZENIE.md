@@ -29,7 +29,7 @@ Aktualizacja 20.10.2026: wgrana wersja po audycie (wszystkie 240 plików zgodne 
 4. Nigdy nie usuwaj na serwerze folderu `_bilety/dane` (statystyki, ustawienia panelu). Paczka go nie zawiera, więc wgranie z nadpisaniem go nie rusza.
 
 `.htaccess` (sprawdzony na Apache 2.4 i na żywym serwerze):
-- **krótki adres dla kampanii** `https://padreguilherme.pl/bilety` (też `/bilety/`, www, http, wielkie litery): obsługuje go `bilety.php` (sekcja 3a). Gdyby pliku `bilety.php` nie było, `.htaccess` sam przekierowuje (302) z tymi samymi parametrami, tylko bez statystyk,
+- **krótki adres dla kampanii** `https://padreguilherme.pl/bilety` (też `/bilety/`, www, http, wielkie litery): obsługuje go `bilety.php` (sekcja 3a). Gdyby pliku `bilety.php` nie było, `.htaccess` sam przekierowuje (302) do eBilet z `partner=l2lsp` i całym ciągiem parametrów z linku, tylko bez statystyk (link z własnym `partner=` traci wtedy parametry, a link wklejony z HTML z `&amp;` gubi kolejne `utm_*`),
 - przekierowuje `http://` i `www.` na `https://padreguilherme.pl/` (301, parametry UTM zostają),
 - przekierowuje `/index.html` na `/`,
 - ustawia typy plików AVIF i WOFF2,
@@ -60,20 +60,20 @@ Aktualizacja 20.10.2026: wgrana wersja po audycie (wszystkie 240 plików zgodne 
 
 **GA4 (opcjonalnie, domyślnie wyłączone)**: po wpisaniu w panelu klucza API Measurement Protocol każde wejście od tej chwili (bez robotów, podglądów i sygnału „nie śledź”) trafia do GA4 G-MQFK04FB3F jako zdarzenie `przekierowanie_bilety` z parametrami `redirect_source`, `redirect_medium`, `redirect_campaign`, `redirect_content`, `redirect_term`, `redirect_referrer`, `redirect_app`, `redirect_device`, `redirect_click_id`. Wysyła serwer: bez ciasteczek, IP i przeglądarki odwiedzającego, z losowym identyfikatorem dla każdego wejścia i zgodami reklamowymi „DENIED”. Google otrzymuje jednak czas i parametry kampanii każdego wejścia, także osób, które na stronie odmówiły zgody (banera przy /bilety nie ma). Włączyć dopiero po zmianie polityki prywatności i banera oraz akceptacji prawnika (DO-POTWIERDZENIA, punkt G; projekt tekstu: docs/PRYWATNOSC-BILETY.md). GA4 niewiele tu dodaje: każde wejście to w GA4 osobny użytkownik bez sesji, a wszystkie dane są w panelu. Bez PHP-FPM wysyłka nie dzieje się sama: przycisk „Wyślij zaległe” co najmniej raz na 3 dni (GA4 przyjmuje zdarzenia do 72 godzin wstecz).
 
-**Wgranie tej zmiany (20.10.2026)**: paczka `padre-bilety-statystyki.zip` (7 plików: `.htaccess`, `bilety.php`, `_bilety/.htaccess`, `_bilety/lib.php`, `_bilety/config.php`, `statystyki/.htaccess`, `statystyki/index.php`). Pozostałe pliki na serwerze są aktualne. Nie wgrywaj roboczego folderu `dist/padreguilherme.pl` z komputera dewelopera bez ponownego `npm run dist` (w czasie testów jego `config.php` wskazuje lokalną atrapę GA4).
+**Wgranie tej zmiany (20.10.2026)**: paczka `padre-bilety-statystyki.zip` (tworzy ją `npm run dist` w folderze `dist/`; 7 plików: `.htaccess`, `bilety.php`, `_bilety/.htaccess`, `_bilety/lib.php`, `_bilety/config.php`, `statystyki/.htaccess`, `statystyki/index.php`). Pozostałe pliki na serwerze są aktualne. Nie wgrywaj roboczego folderu `dist/padreguilherme.pl` z komputera dewelopera bez ponownego `npm run dist` (w czasie testów jego `config.php` wskazuje lokalną atrapę GA4).
 1. Przed wgraniem: w panelu home.pl sprawdź wersję PHP domeny (8.x) i pobierz z serwera obecny `/public_html/.htaccess` jako kopię (np. `htaccess-kopia-20-10.txt` na swoim komputerze).
 2. Wgraj zawartość paczki do `/public_html` z nadpisaniem, z plikami ukrytymi.
 
 **Po wgraniu sprawdź** (raz, przed przepięciem kampanii):
 1. W zwykłej przeglądarce (telefon albo komputer, nie curl) otwórz `https://padreguilherme.pl/bilety?utm_source=test&utm_campaign=sprawdzenie`. Otwiera się eBilet; w pasku adresu ma być `partner=l2lsp&utm_source=test&utm_campaign=sprawdzenie`.
 2. Panel `https://padreguilherme.pl/statystyki/`: w „Ostatnie wejścia” jest `test / sprawdzenie`, na dole „zapis danych: tak”. Jeśli „NIE”: napisz do pomocy home.pl, że PHP musi móc zapisywać w folderze `_bilety` (nie ustawiaj 777).
-3. Jeśli w panelu nie ma wejścia, a przekierowanie działa, to działa przekierowanie awaryjne z `.htaccess` (bez statystyk): sprawdź, czy wgrał się `bilety.php` i nowy `.htaccess`. Technicznie: `curl -s -o /dev/null -D - -A 'Mozilla/5.0 (test)' 'https://padreguilherme.pl/bilety?utm_source=test'` pokazuje `Cache-Control: no-store, private` tylko z `bilety.php` (zapytanie `curl -sI` też działa, ale w panelu liczy się jako robot).
+3. Jeśli w panelu nie ma wejścia, a przekierowanie działa, to działa przekierowanie awaryjne z `.htaccess` (bez statystyk): sprawdź, czy wgrał się `bilety.php` i nowy `.htaccess`. Technicznie (Terminal na Macu albo Linux): `curl -s -o /dev/null -D - -A 'Mozilla/5.0 (test)' 'https://padreguilherme.pl/bilety?utm_source=test'` pokazuje `Cache-Control: no-store, private` tylko z `bilety.php` (zapytanie `curl -sI` też działa, ale w panelu liczy się jako robot).
 4. Strona główna `https://padreguilherme.pl/` i `https://padreguilherme.pl/ebiletconfidential/` otwierają się jak wcześniej.
-5. W FileZilli widać folder `_bilety/dane` i da się w nim usunąć plik (potrzebne do odblokowania panelu, niżej).
+5. W FileZilli widać folder `_bilety/dane` i da się w nim usuwać pliki (potrzebne do odblokowania panelu, niżej). Na próbę usuń `minuta.php` (odtworzy się sam przy następnym wejściu); nie usuwaj na próbę innych plików.
 6. Wejścia testowe zostają w sumach; obejrzysz je filtrem po źródle `test`. Diagnostyka na dole panelu: „wysyłka po odpowiedzi (PHP-FPM)” i „cURL” mają znaczenie tylko dla GA4.
 
 **Gdy coś nie działa (w trakcie kampanii)**
-- `/bilety` działa źle: usuń na serwerze `bilety.php` (nie zmieniaj nazwy na np. `.off`, bo wtedy kod byłby widoczny). `.htaccess` sam przekierowuje do eBilet z parametrami, tylko bez statystyk.
+- `/bilety` działa źle: usuń na serwerze `bilety.php` (nie zmieniaj nazwy na np. `.off`, bo wtedy kod byłby widoczny). `.htaccess` sam przekierowuje do eBilet z parametrami z linku, tylko bez statystyk.
 - Cała strona pokazuje błąd: wgraj z powrotem kopię `.htaccess` z punktu 1 (zmień nazwę na `.htaccess`).
 - Panel zablokowany po nieudanych próbach: odczekaj 15 minut albo usuń przez FTP plik `_bilety/dane/logowania.php`.
 - Zapomniane hasło: usuń przez FTP `_bilety/dane/ustawienia.php` (wraca hasło przekazane przy wdrożeniu; usuwa też zapisany klucz GA4).

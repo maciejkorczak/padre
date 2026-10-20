@@ -50,7 +50,11 @@ $act = $post && isset($_POST['a']) && is_string($_POST['a']) ? $_POST['a'] : '';
 // (starsze wpisy są usuwane przy każdym otwarciu panelu).
 function pg_login_key() {
   $u = pg_settings();
-  if (empty($u['throttle_key'])) { $u['throttle_key'] = bin2hex(random_bytes(16)); pg_save_settings($u); }
+  if (empty($u['throttle_key'])) {
+    // Klucz tworzony pod blokadą: równoległe pierwsze próby dostają ten sam klucz.
+    $u = pg_update_state('ustawienia.php', function ($x) { if (empty($x['throttle_key'])) $x['throttle_key'] = bin2hex(random_bytes(16)); return $x; });
+    if (!is_array($u) || empty($u['throttle_key'])) $u = ['throttle_key' => hash('sha256', 'pg-throttle|' . PG_DIR)];
+  }
   $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
   return substr(hash_hmac('sha256', $ip, $u['throttle_key']), 0, 16);
 }
@@ -66,12 +70,12 @@ if (is_file(pg_dane() . '/logowania.php')) pg_update_state('logowania.php', 'pg_
 if (!$logged && $act === 'login') {
   $key = pg_login_key();
   // Sprawdzenie limitu i zapis próby w jednym kroku pod blokadą (równoległe próby nie omijają limitu).
-  $blocked = false;
+  $blocked = false; $now = time();
   if (csrf_ok()) {
-    pg_update_state('logowania.php', function ($s) use ($key, &$blocked) {
+    pg_update_state('logowania.php', function ($s) use ($key, $now, &$blocked) {
       $s = pg_login_prune($s);
       if ((isset($s['k'][$key]) && count($s['k'][$key]) >= 5) || count($s['all']) >= 50) { $blocked = true; return $s; }
-      $s['k'][$key][] = time(); $s['all'][] = time();
+      $s['k'][$key][] = $now; $s['all'][] = $now;
       return $s;
     });
   }
@@ -80,8 +84,15 @@ if (!$logged && $act === 'login') {
   elseif ($c['panel_hash'] !== '' && isset($_POST['haslo']) && is_string($_POST['haslo']) && password_verify($_POST['haslo'], $c['panel_hash'])) {
     session_regenerate_id(true);
     $_SESSION['pg'] = ['t' => time(), 'g' => pg_gen($c['panel_hash']), 'csrf' => bin2hex(random_bytes(16))];
-    // Udane logowanie: zdejmujemy próby z tego adresu (także tę przed chwilą zapisaną).
-    pg_update_state('logowania.php', function ($s) use ($key) { $s = pg_login_prune($s); unset($s['k'][$key]); return $s; });
+    // Udane logowanie: zdejmujemy próby z tego adresu, a z łącznego licznika tę przed chwilą zapisaną
+    // (łączny limit liczy tylko nieudane próby).
+    pg_update_state('logowania.php', function ($s) use ($key, $now) {
+      $s = pg_login_prune($s);
+      unset($s['k'][$key]);
+      $i = array_search($now, $s['all']);
+      if ($i !== false) array_splice($s['all'], $i, 1);
+      return $s;
+    });
     header('Location: ./', true, 303); exit;
   } else {
     usleep($writable ? 400000 : 2000000); // bez zapisu licznika prób: dłuższa przerwa
@@ -109,6 +120,8 @@ a { color: var(--fg); text-underline-offset: .2em; }
 .range { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; margin-top: 20px; }
 .range label { display: grid; gap: 4px; font-size: .8125rem; color: var(--fg-3); }
 .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { max-width: 100%; overflow-wrap: anywhere; }
+.filters .chip { border-radius: 18px; padding-block: 6px; }
 .presets a, .chip { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 999px; text-decoration: none; font-size: .8125rem; color: var(--fg-2); }
 .presets a[aria-current] { border-color: var(--accent); color: var(--fg); background: rgba(232,131,78,.12); }
 input, select { min-height: 40px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 4px; background: var(--bg); color: var(--fg); font: inherit; }
@@ -172,20 +185,19 @@ if (!$logged) {
 if ($post) {
   if (!csrf_ok()) back('', 'Sesja wygasła. Spróbuj ponownie.');
   if ($act === 'wyloguj') { $_SESSION = []; session_destroy(); header('Location: ./', true, 303); exit; }
-  $u = pg_settings();
+  $save = function ($k, $v) { $r = pg_update_state('ustawienia.php', function ($u) use ($k, $v) { $u[$k] = $v; return $u; }); return $r !== null; };
   if ($act === 'ga4_zapisz') {
     $s = isset($_POST['secret']) && is_string($_POST['secret']) ? trim($_POST['secret']) : '';
     if ($s === '') back('', 'Wpisz klucz API (pole było puste). Aby wyłączyć wysyłkę, użyj przycisku „Wyłącz wysyłkę do GA4”.');
     if (!preg_match('/^[A-Za-z0-9_\-]{8,100}$/', $s)) back('', 'Klucz API ma nieprawidłowy format (litery, cyfry, „-” i „_”).');
     $wasOff = $c['ga4_secret'] === '';
-    $u['ga4_secret'] = $s;
-    if (!pg_save_settings($u)) back('', 'Nie udało się zapisać ustawień (katalog danych niezapisywalny).');
-    if ($wasOff) pg_ga4_start();
-    back('Klucz zapisany. Do GA4 trafiają wejścia od tej chwili (wcześniejsze nie).');
+    // Najpierw punkt startu (wcześniejsze wejścia nie trafią do GA4), potem klucz.
+    if ($wasOff && !pg_ga4_start()) back('', 'Nie udało się zapisać stanu GA4 (katalog danych niezapisywalny).');
+    if (!$save('ga4_secret', $s)) back('', 'Nie udało się zapisać ustawień (katalog danych niezapisywalny).');
+    back($wasOff ? 'Klucz zapisany. Do GA4 trafiają wejścia od tej chwili (wcześniejsze nie).' : 'Klucz zmieniony. Wysyłka trwa bez zmian.');
   }
   if ($act === 'ga4_wylacz') {
-    $u['ga4_secret'] = '';
-    if (!pg_save_settings($u)) back('', 'Nie udało się zapisać ustawień (katalog danych niezapisywalny).');
+    if (!$save('ga4_secret', '')) back('', 'Nie udało się zapisać ustawień (katalog danych niezapisywalny).');
     back('Wysyłka do GA4 wyłączona.');
   }
   if ($act === 'ga4_test') {
@@ -208,10 +220,10 @@ if ($post) {
     if (!password_verify($old, $c['panel_hash'])) back('', 'Obecne hasło jest nieprawidłowe.');
     if (strlen($new) < 12) back('', 'Nowe hasło musi mieć co najmniej 12 znaków.');
     if ($new !== $rep) back('', 'Nowe hasła się różnią.');
-    $u['panel_hash'] = password_hash($new, PASSWORD_DEFAULT);
-    if (!pg_save_settings($u)) back('', 'Nie udało się zapisać hasła.');
+    $hash = password_hash($new, PASSWORD_DEFAULT);
+    if (!$save('panel_hash', $hash)) back('', 'Nie udało się zapisać hasła.');
     session_regenerate_id(true);
-    $_SESSION['pg']['g'] = pg_gen($u['panel_hash']); // inne sesje (stare hasło) zostają wylogowane
+    $_SESSION['pg']['g'] = pg_gen($hash); // inne sesje (stare hasło) zostają wylogowane
     back('Hasło zmienione. Inne zalogowane urządzenia zostały wylogowane.');
   }
   back();
@@ -346,7 +358,7 @@ function nice_step($max) {
   return 10 * $p;
 }
 function chart_days($days) {
-  $W = 960; $H = 260; $L = 52; $R = 8; $T = 14; $B = 34;
+  $W = 960; $H = 260; $L = 8; $R = 52; $T = 14; $B = 34; // skala po prawej: na telefonie widać ją razem z najnowszymi dniami
   $pw = $W - $L - $R; $ph = $H - $T - $B;
   $n = max(1, count($days)); $vmax = max(1, max($days));
   $step = nice_step($vmax); $max = $step * (int) ceil($vmax / $step);
@@ -355,7 +367,7 @@ function chart_days($days) {
   for ($v = 0; $v <= $max; $v += $step) {
     $y = $T + $ph - $ph * $v / $max;
     $s .= '<line class="' . ($v === 0 ? 'base' : 'grid-line') . '" x1="' . $L . '" x2="' . ($W - $R) . '" y1="' . round($y, 1) . '" y2="' . round($y, 1) . '"/>';
-    $s .= '<text class="tick" x="' . ($L - 8) . '" y="' . round($y + 4, 1) . '" text-anchor="end">' . h(nf($v)) . '</text>';
+    $s .= '<text class="tick" x="' . ($W - $R + 8) . '" y="' . round($y + 4, 1) . '" text-anchor="start">' . h(nf($v)) . '</text>';
   }
   $every = max(1, (int) ceil($n / 8)); $i = 0;
   $dn = ['nd.', 'pon.', 'wt.', 'śr.', 'czw.', 'pt.', 'sob.'];
@@ -398,6 +410,7 @@ echo page_head('Statystyki /bilety');
 echo '<div class="wrap">';
 echo '<header class="top"><div><h1>Statystyki /bilety</h1><p class="muted">Wejścia na <code>padreguilherme.pl/bilety</code> przed przekierowaniem do sprzedaży biletów. Bez robotów i podglądów linków.</p></div>';
 echo '<form method="post">' . csrf_field() . '<input type="hidden" name="a" value="wyloguj"><button class="ghost" type="submit">Wyloguj</button></form></header>';
+if (pg_cap_reached()) echo '<p class="flash err" role="alert">Uwaga: plik wejść tego miesiąca osiągnął limit ' . h(nf($c['limit_pliku_mb'])) . ' MB, więc nowe wejścia NIE są zapisywane (przekierowanie działa). To zwykle oznacza sztuczny ruch; daj znać deweloperowi.</p>';
 if (!$writable) echo '<p class="flash err" role="alert">Uwaga: katalog danych nie jest zapisywalny, więc wejścia NIE są zapisywane (przekierowanie działa). Sprawdź uprawnienia folderu _bilety na serwerze.</p>';
 if ($flash && ($flash[0] || $flash[1])) echo '<p class="flash ' . ($flash[1] ? 'err' : 'ok') . '" role="status">' . h($flash[1] ?: $flash[0]) . '</p>';
 
@@ -409,9 +422,9 @@ foreach ($presets as $k => $p) {
 echo '</div><label>Od<input type="date" name="od" value="' . h($od) . '" min="' . h($minDate) . '" max="' . h($today) . '"></label><label>Do<input type="date" name="do" value="' . h($do) . '" min="' . h($minDate) . '" max="' . h($today) . '"></label>';
 foreach ($filters as $k => $v) echo '<input type="hidden" name="f_' . h($k) . '" value="' . h($v) . '">';
 echo '<button class="ghost" type="submit">Pokaż</button><a class="btn ghost" href="' . h(qs(['eksport' => 'csv'])) . '">Pobierz CSV</a></form>';
-echo '<p class="muted" style="margin-top:8px">CSV zawiera też wejścia pominięte w liczbach (roboty, podglądy linków): oznacza je kolumna „pominiete”.</p>';
+echo '<p class="muted" style="margin-top:8px">CSV zawiera też wejścia pominięte w liczbach (roboty, podglądy linków, zapytania inne niż zwykłe otwarcie, zalew): oznacza je kolumna „pominiete”.</p>';
 if ($filters) {
-  echo '<p class="muted" style="margin-top:12px">Filtr: ';
+  echo '<p class="muted filters" style="margin-top:12px">Filtr: ';
   $names = ['us' => 'źródło', 'um' => 'medium', 'uc' => 'kampania', 'ux' => 'treść'];
   foreach ($filters as $k => $v) echo '<a class="chip" href="' . h(qs([], ['f_' . $k])) . '">' . h($names[$k] . ': ' . $v) . ' ✕</a> ';
   echo '</p>';
@@ -467,10 +480,13 @@ function pg_slug($v) {
 }
 $b = [];
 foreach (['us', 'um', 'uc', 'ux'] as $k) $b[$k] = isset($_GET['b_' . $k]) && is_string($_GET['b_' . $k]) ? pg_slug($_GET['b_' . $k]) : '';
-echo '<section class="card"><h2>Link do kampanii</h2><p class="muted">Jedno nazewnictwo dla wszystkich: małe litery, bez spacji i polskich znaków, np. <code>instagram</code> / <code>paid_social</code> / <code>padre_lodz_2027</code> / <code>reel_skytech_01</code>. Nigdy nie wpisuj w link danych osobowych (imion, e-maili, telefonów) ani kodów pojedynczych odbiorców (np. numeru klienta, znaczników newslettera typu *|UNIQID|*): jeden link na grupę odbiorców.</p>';
+echo '<section class="card"><h2>Link do kampanii</h2><p class="muted">Jedno nazewnictwo dla wszystkich: małe litery, bez spacji i polskich znaków, np. <code>instagram</code> / <code>paid_social</code> / <code>padre_lodz_2027</code> / <code>reel_skytech_01</code>. Nigdy nie wpisuj w link danych osobowych (imion, e-maili, telefonów) ani kodów pojedynczych odbiorców (np. numeru klienta, znaczników newslettera typu <code>*|UNIQID|*</code>): jeden link na grupę odbiorców.</p>';
 echo '<form class="row" method="get" style="margin-top:12px">';
 foreach (['us' => 'utm_source', 'um' => 'utm_medium', 'uc' => 'utm_campaign', 'ux' => 'utm_content'] as $k => $l) echo '<label>' . h($l) . '<input type="text" name="b_' . h($k) . '" value="' . h($b[$k]) . '" style="max-width:200px"></label>';
-echo '<input type="hidden" name="od" value="' . h($od) . '"><input type="hidden" name="do" value="' . h($do) . '"><button class="ghost" type="submit">Utwórz link</button></form>';
+if ($preset !== '' && isset($presets[$preset])) echo '<input type="hidden" name="p" value="' . h($preset) . '">';
+else echo '<input type="hidden" name="od" value="' . h($od) . '"><input type="hidden" name="do" value="' . h($do) . '">';
+foreach ($filters as $k => $v) echo '<input type="hidden" name="f_' . h($k) . '" value="' . h($v) . '">';
+echo '<button class="ghost" type="submit">Utwórz link</button></form>';
 if (array_filter($b)) {
   $q = [];
   foreach (['us' => 'utm_source', 'um' => 'utm_medium', 'uc' => 'utm_campaign', 'ux' => 'utm_content'] as $k => $l) if ($b[$k] !== '') $q[$l] = $b[$k];

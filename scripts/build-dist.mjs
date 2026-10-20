@@ -57,3 +57,8 @@ files.add('apple-touch-icon.png');
 execFileSync('zip', ['-q', '-r', '-X', '../padreguilherme.pl.zip', '.'], { cwd: out });
 const zip = (await stat(path.join(root, 'dist/padreguilherme.pl.zip'))).size;
 console.log(`OK: dist/padreguilherme.pl — ${files.size} plików, ${(bytes / 1048576).toFixed(1)} MB; zip ${(zip / 1048576).toFixed(1)} MB`);
+// Mała paczka, gdy zmienia się tylko /bilety i panel (docs/WDROZENIE.md, sekcja 3a).
+const small = ['.htaccess', 'bilety.php', '_bilety/.htaccess', '_bilety/lib.php', '_bilety/config.php', 'statystyki/.htaccess', 'statystyki/index.php'].filter((f) => files.has(f));
+await rm(path.join(root, 'dist/padre-bilety-statystyki.zip'), { force: true });
+execFileSync('zip', ['-q', '-X', '../padre-bilety-statystyki.zip', ...small], { cwd: out });
+console.log(`OK: dist/padre-bilety-statystyki.zip — ${small.length} plików (/bilety i panel statystyk)`);

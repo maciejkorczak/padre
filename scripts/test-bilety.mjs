@@ -142,11 +142,11 @@ try {
   check('Awaryjnie: wejście nie zapisane (bez błędu)', (await readRows()).rows.length === sent);
 
   /* ---------- Panel ---------- */
-  const session = (localAddress) => {
+  const session = (localAddress, srvPort = port) => {
     const s = { cookie: '', html: '' };
     s.req = (method = 'GET', body = null, q = '') => new Promise((resolve, reject) => {
       const data = body ? new URLSearchParams(body).toString() : '';
-      const rq = http.request({ host: '127.0.0.1', port, path: '/statystyki/' + q, method, localAddress, headers: { Cookie: s.cookie, ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) } : {}) } }, (res) => {
+      const rq = http.request({ host: '127.0.0.1', port: srvPort, path: '/statystyki/' + q, method, localAddress, headers: { Cookie: s.cookie, ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) } : {}) } }, (res) => {
         const chunks = []; res.on('data', (d) => chunks.push(d)); res.on('end', () => {
           const sc = res.headers['set-cookie']; if (sc) s.cookie = sc[0].split(';')[0];
           const buf = Buffer.concat(chunks); s.html = buf.toString('utf8');
@@ -246,10 +246,10 @@ try {
   const C = session('127.0.0.1');
   r = await C.login(PASSWORD);
   check('Logowanie: blokada nie dotyczy innych adresów', r.status === 303);
-  // 20 równoległych prób z jednego adresu: limit 5 obowiązuje także wtedy.
-  const E = session('127.0.0.3');
-  await E.req();
-  const par = await Promise.all(Array.from({ length: 20 }, (_, i) => E.req('POST', { a: 'login', csrf: E.csrf(), haslo: 'zle-r' + i })));
+  // 20 równoległych prób z jednego adresu, każda w osobnej sesji: limit 5 obowiązuje także wtedy.
+  const Es = Array.from({ length: 20 }, () => session('127.0.0.3'));
+  for (const e of Es) await e.req();
+  const par = await Promise.all(Es.map((e, i) => e.req('POST', { a: 'login', csrf: e.csrf(), haslo: 'zle-r' + i })));
   const verified = par.filter((x) => /Nieprawidłowe hasło/.test(x.text)).length;
   check('Logowanie: równoległe próby nie omijają limitu 5', verified <= 5 && par.every((x) => /Nieprawidłowe hasło|Za dużo nieudanych prób/.test(x.text)), `${verified} sprawdzonych haseł`);
   const lj = await readFile(path.join(DANE, 'logowania.php'), 'utf8');
@@ -280,7 +280,39 @@ try {
   const nBefore = (await readRows()).rows.length;
   const capR = await go('/bilety?utm_source=limit_pliku');
   check('Limit wielkości pliku: wejście nie zapisane, przekierowanie działa', (await readRows()).rows.length === nBefore && capR.headers.get('location') === `${T}&utm_source=limit_pliku${F}`);
-  check('Zalew: powyżej limitu na minutę tylko znacznik, bez parametrów (przekierowanie działa)', fl.some((x) => x.flood === 1 && !('us' in x)) && (await go('/bilety?utm_source=zalew2')).headers.get('location') === `${T}&utm_source=zalew2${F}`, JSON.stringify(fl) + ' ' + await readFile(path.join(DANE, 'minuta.json'), 'utf8').catch(() => 'brak minuta.json'));
+  r = await D.req();
+  check('Limit wielkości pliku: ostrzeżenie w panelu', /osiągnął limit/.test(r.text));
+  check('Zalew: powyżej limitu na minutę tylko znacznik, bez parametrów (przekierowanie działa)', fl.some((x) => x.flood === 1 && !('us' in x)) && (await go('/bilety?utm_source=zalew2')).headers.get('location') === `${T}&utm_source=zalew2${F}`, JSON.stringify(fl) + ' ' + await readFile(path.join(DANE, 'minuta.php'), 'utf8').catch(() => 'brak minuta.php'));
+
+  /* ---------- Z opcache jak na hostingu (restrict_api, sprawdzanie zmian co 60 s) ---------- */
+  // Wcześniejsza wersja czytała ustawienia przez include: po „Wyłącz” GA4 dalej dostawało wejścia,
+  // a zmiana hasła wylogowywała właściciela. Ustawienia są teraz danymi, więc to nie może wrócić.
+  const dir2 = await mkdtemp(path.join(os.tmpdir(), 'pg-bilety-opc-'));
+  await cp(path.join(root, 'server'), dir2, { recursive: true });
+  await rm(path.join(dir2, '_bilety/dane'), { recursive: true, force: true });
+  await rm(path.join(dir2, '_bilety/config.local.php'), { force: true });
+  await writeFile(path.join(dir2, '_bilety/config.php'), `<?php return ['panel_hash' => ${JSON.stringify(hash).replace(/\$/g, '\\$')}, 'ga4_endpoint' => 'http://127.0.0.1:${ga.address().port}'];\n`);
+  await cp(path.join(dir, 'router.php'), path.join(dir2, 'router.php'));
+  const port2 = port + 1;
+  const php2 = spawn('php', ['-d', 'opcache.enable=1', '-d', 'opcache.enable_cli=1', '-d', 'opcache.validate_timestamps=1', '-d', 'opcache.revalidate_freq=60', '-d', 'opcache.restrict_api=/nonexistent', '-S', `127.0.0.1:${port2}`, path.join(dir2, 'router.php')], { cwd: dir2, stdio: 'ignore' });
+  try {
+    for (let i = 0; i < 50; i++) { try { await fetch(`http://127.0.0.1:${port2}/x`); break; } catch { await new Promise((res) => setTimeout(res, 100)); } }
+    const wait = () => new Promise((res) => setTimeout(res, 3200)); // pliki starsze niż 2 s trafiają do opcache
+    const O = session('127.0.0.1', port2);
+    await O.login(PASSWORD);
+    await O.req('POST', { a: 'ga4_zapisz', csrf: O.csrf(), secret: 'opcSECRET123' });
+    await wait(); await O.req(); await O.req();
+    await O.req('POST', { a: 'ga4_wylacz', csrf: O.csrf() });
+    await fetch(`http://127.0.0.1:${port2}/bilety?utm_source=opcache_po`, { redirect: 'manual', headers: { 'User-Agent': UA_IG } });
+    await O.req('POST', { a: 'ga4_wyslij', csrf: O.csrf() });
+    r = await O.req();
+    check('Opcache: po „Wyłącz” nic nie trafia do GA4, panel pokazuje „wyłączone”', !gaHits.some((x) => x.body.includes('opcache_po')) && /status-bad">wyłączone/.test(r.text));
+    await wait(); await O.req();
+    await O.req('POST', { a: 'haslo', csrf: O.csrf(), stare: PASSWORD, nowe: 'opcache-haslo-789', nowe2: 'opcache-haslo-789' });
+    r = await O.req();
+    const P = session('127.0.0.1', port2);
+    check('Opcache: po zmianie hasła właściciel zostaje zalogowany, stare hasło od razu nie działa', /Wejścia dziennie/.test(r.text) && (await P.login(PASSWORD)).status !== 303 && (await P.login('opcache-haslo-789')).status === 303);
+  } finally { php2.kill(); await rm(dir2, { recursive: true, force: true }); }
 } finally {
   php.kill(); ga.close();
   await rm(dir, { recursive: true, force: true });
