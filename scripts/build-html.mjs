@@ -53,8 +53,9 @@ const fallback = (name) => {
   const w = ws.find((x) => x >= 1000) || ws[ws.length - 1];
   return imgUrl(name, w, 'jpg');
 };
-const largest = (name) => img(name).widths[img(name).widths.length - 1];
 
+// Kadr pionowy (mobile=) tylko dla telefonu trzymanego pionowo; w poziomie zostaje kadr szeroki.
+const MOBILE_MEDIA = '(max-width: 767px) and (orientation: portrait)';
 // <pg-img name="" sizes="" alt="" class="" loading="" fetchpriority="" mobile="" pos="">
 function picture(attrs) {
   const { name, sizes = '100vw', alt = '', mobile } = attrs;
@@ -64,7 +65,7 @@ function picture(attrs) {
   const style = attrs.pos ? ` style="object-position:${esc(attrs.pos)}"` : '';
   const prio = attrs.fetchpriority ? ` fetchpriority="${esc(attrs.fetchpriority)}"` : '';
   const mob = mobile
-    ? `<source media="(max-width: 767px)" type="image/avif" srcset="${srcset(mobile, 'avif')}" sizes="${esc(sizes)}"><source media="(max-width: 767px)" type="image/jpeg" srcset="${srcset(mobile, 'jpg')}" sizes="${esc(sizes)}">`
+    ? `<source media="${MOBILE_MEDIA}" type="image/avif" srcset="${srcset(mobile, 'avif')}" sizes="${esc(sizes)}"><source media="${MOBILE_MEDIA}" type="image/jpeg" srcset="${srcset(mobile, 'jpg')}" sizes="${esc(sizes)}">`
     : '';
   return `<picture>${mob}<source type="image/avif" srcset="${srcset(name, 'avif')}" sizes="${esc(sizes)}"><img src="${fallback(name)}" srcset="${srcset(name, 'jpg')}" sizes="${esc(sizes)}" width="${m.w}" height="${m.h}" alt="${esc(alt)}" loading="${loading}" decoding="${loading === 'eager' ? 'sync' : 'async'}"${prio}${cls}${style}></picture>`;
 }
@@ -82,11 +83,11 @@ const tiktok = TIKTOK.map((t, i) => `<li class="viral__item reveal" style="--i:$
         </a>
       </li>`).join('\n      ');
 
+// Lightbox dostaje pełne srcset: przeglądarka wybiera rozmiar do ekranu (zamiast zawsze największego pliku).
 const gallery = GALLERY.map((g, i) => {
   const m = img(g.img);
-  const L = largest(g.img);
   return `<li class="gallery__item gallery__item--${g.layout} reveal" style="--i:${i % 3}">
-        <button class="gallery__btn" type="button" data-lb-index="${i}" data-lb-avif="${imgUrl(g.img, L, 'avif')}" data-lb-jpg="${imgUrl(g.img, L, 'jpg')}" data-lb-w="${m.w}" data-lb-h="${m.h}" data-lb-caption="${esc(g.caption)}" aria-label="Powiększ zdjęcie: ${esc(g.caption)}">
+        <button class="gallery__btn" type="button" data-lb-index="${i}" data-lb-avif="${srcset(g.img, 'avif')}" data-lb-jpg="${srcset(g.img, 'jpg')}" data-lb-src="${fallback(g.img)}" data-lb-w="${m.w}" data-lb-h="${m.h}" data-lb-caption="${esc(g.caption)}" aria-label="Powiększ zdjęcie: ${esc(g.caption)}">
           <span class="gallery__frame"><span class="gallery__plx" data-parallax-inner>${picture({ name: g.img, sizes: g.sizes, alt: g.caption, pos: g.pos })}</span></span>
         </button>
       </li>`;
@@ -95,7 +96,7 @@ const gallery = GALLERY.map((g, i) => {
 const posters = POSTERS.map((p, i) => `<li class="poster reveal" style="--i:${i % 5}">
         <div class="poster__card">
           <span class="poster__img">${picture({ name: p.img, sizes: '(min-width: 1200px) 230px, (min-width: 768px) 28vw, 62vw', alt: p.alt })}</span>
-          <span class="poster__meta"><span class="poster__title">${esc(p.title)}</span><span class="poster__where">${esc(p.where)}</span></span>
+          <span class="poster__meta"><span class="poster__title">${esc(p.title)}</span><span class="poster__where"${p.lang ? ` lang="${p.lang}"` : ''}>${esc(p.where)}</span></span>
         </div>
       </li>`).join('\n      ');
 
@@ -107,7 +108,7 @@ function faqItem(item, id) {
   const ticket = item.ticket ? '<p><a class="btn btn--primary btn--sm" href="#bilety" data-ticket="faq">Kup bilet</a></p>' : '';
   return `<div class="acc">
         <h3 class="acc__h"><button class="acc__btn" type="button" id="${id}-btn" aria-expanded="false" aria-controls="${id}-panel" data-acc-btn>${esc(item.q)}<span class="acc__icon" aria-hidden="true"></span></button></h3>
-        <div class="acc__panel" id="${id}-panel" role="region" aria-labelledby="${id}-btn" data-acc-panel>
+        <div class="acc__panel" id="${id}-panel" data-acc-panel>
           <div class="acc__inner">${paras}${list}${contacts}${links}${ticket}</div>
         </div>
       </div>`;
@@ -120,7 +121,8 @@ const faq = `<div class="acc-group reveal" data-acc>
       ${FAQ_MORE.map((q, i) => faqItem(q, `faq-m${i + 1}`)).join('\n      ')}
       </div>`;
 
-const heroPreload = ['hero-hd-m', 'hero-hd'].map((n) => `<link rel="preload" as="image" type="image/avif" imagesrcset="${srcset(n, 'avif')}" imagesizes="100vw" media="${n === 'hero-hd-m' ? '(max-width: 767px)' : '(min-width: 768px)'}" fetchpriority="high">`).join('\n');
+// Media preloadu = media <source> w <picture>: przeglądarka pobiera dokładnie ten plik, który wyświetli.
+const heroPreload = ['hero-hd-m', 'hero-hd'].map((n) => `<link rel="preload" as="image" type="image/avif" imagesrcset="${srcset(n, 'avif')}" imagesizes="100vw" media="${n === 'hero-hd-m' ? MOBILE_MEDIA : '(min-width: 768px), (orientation: landscape)'}" fetchpriority="high">`).join('\n');
 
 // Dane strukturalne (@graph): strona, wydarzenie, wykonawcy, organizator i FAQ widoczne na stronie.
 const IMG = [`${SITE_URL}assets/og-image.jpg`, `${SITE_URL}assets/img/hero-hd-1920.jpg`];
@@ -136,8 +138,9 @@ const organizer = {
 };
 const event = {
   '@type': 'MusicEvent', '@id': `${SITE_URL}#koncert`,
-  name: 'Padre Guilherme - Love is My Religion | Atlas Arena, Łódź',
-  description: 'Koncert Padre Guilherme, księdza i DJ-a z Portugalii, w Atlas Arenie w Łodzi 14 lutego 2027.' + (config.supportAnnounced ? ' Support: Skytech.' : ''),
+  // Google: bez miejsca w nazwie (jest w location) i bez powtarzania daty i miejsca w opisie.
+  name: 'Padre Guilherme - Love is My Religion',
+  description: 'Koncert Padre Guilherme, księdza i DJ-a z Portugalii, który łączy energię techno z brzmieniem muzyki sakralnej.' + (config.supportAnnounced ? ' Support: Skytech.' : ''),
   startDate: '2027-02-14',
   eventStatus: 'https://schema.org/EventScheduled',
   eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
@@ -206,11 +209,20 @@ if (config.accreditationReady && config.accreditationUrl) {
   html = html.replace(/<p class="media__pending reveal" data-accreditation-pending>[\s\S]*?<\/p>\s*/, '');
 }
 
-// Wersjonowanie CSS i JS (bezpieczny długi cache na serwerze).
-for (const f of ['assets/css/main.css', 'assets/js/config.js', 'assets/js/main.js']) {
+// Wersjonowanie CSS, JS, logo i ikony (pliki w /assets/ mają na serwerze cache na rok).
+for (const f of ['assets/css/main.css', 'assets/js/config.js', 'assets/js/main.js', 'assets/logo-padre-guilherme.svg', 'assets/apple-touch-icon.png']) {
   const v = createHash('sha1').update(await readFile(path.join(root, f))).digest('hex').slice(0, 8);
-  html = html.replace(`"${f}"`, `"${f}?v=${v}"`);
+  html = html.replaceAll(`"${f}"`, `"${f}?v=${v}"`);
 }
+
+// Linki otwierane w nowej karcie: informacja dla czytników ekranu.
+// Bez linków biletowych i akredytacji (opis dopisuje main.js) i bez tych, które już ją mają.
+const NEW_TAB = 'otwiera się w nowej karcie';
+html = html.replace(/<a\b([^>]*\btarget="_blank"[^>]*)>([\s\S]*?)<\/a>/g, (all, attrs, inner) => {
+  if (/data-ticket|data-accreditation/.test(attrs) || inner.includes(NEW_TAB)) return all;
+  if (/aria-label="/.test(attrs)) return `<a${attrs.replace(/aria-label="([^"]*)"/, `aria-label="$1 (${NEW_TAB})"`)}>${inner}</a>`;
+  return `<a${attrs}>${inner}<span class="visually-hidden"> (${NEW_TAB})</span></a>`;
+});
 
 const left = html.match(/<pg-img|<!--pg:/g);
 if (left) throw new Error(`Nierozwinięte znaczniki: ${left.length}`);

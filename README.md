@@ -17,7 +17,7 @@ assets/js/config.js        KONFIGURACJA: link eBilet, akredytacje, press pack, n
 assets/js/main.js          interakcje, animacje, lightbox, FAQ, pomiar i zgody
 assets/css/main.css        style (fonty self-hosted, tokeny, komponenty, tryb podglądu)
 assets/img/                zdjęcia AVIF + JPEG w kilku szerokościach (generowane)
-assets/fonts/              Manrope, Saira, Pinyon Script (woff2, latin + latin-ext)
+assets/fonts/              Manrope, Saira, Pinyon Script (woff2, odchudzone; oryginały w source/fonts, scripts/subset-fonts.sh)
 source/images/             oryginały zdjęć (wejście dla generatora)
 design/canvas-v1/          kopia bezpieczeństwa poprzedniej wersji (kanwa projektowa)
 scripts/                   build obrazów, HTML, grafik OG, podglądu i testy

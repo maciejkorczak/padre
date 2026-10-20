@@ -43,7 +43,7 @@ if (SHOTS) await mkdir(SHOT_DIR, { recursive: true });
 async function open(viewport, opts = {}) {
   const ctx = await browser.newContext({ viewport, deviceScaleFactor: opts.dpr || 1, isMobile: !!opts.mobile, hasTouch: !!opts.mobile, reducedMotion: opts.reduced ? 'reduce' : 'no-preference' });
   // Domyślnie zapisana odmowa zgody (baner nie zasłania strony). Testy zgody używają freshConsent.
-  if (!opts.freshConsent) await ctx.addInitScript(() => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: false, marketing: false, ts: 1 })); } catch (e) {} });
+  if (!opts.freshConsent) await ctx.addInitScript(() => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: false, marketing: false, v: 1, ts: Date.now() })); } catch (e) {} });
   if (opts.init) await ctx.addInitScript(opts.init);
   const page = await ctx.newPage();
   const log = [];
@@ -101,6 +101,26 @@ check('Kontakt: tylko formularz L2L, bez adresów e-mail na stronie', html.inclu
 check('FAQ: kod kreskowy zamiast QR, bez pytań o odwołanie i zgubione rzeczy', !/QR|odwołania wydarzenia|Zgubiłem/.test(html) && html.includes('kodu kreskowego'));
 check('Końcowe CTA: „Bilety już w sprzedaży.”', html.includes('Bilety już w sprzedaży.'));
 check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy Live2Listen)', html.includes('href="https://www.live2listen.com/#kontakt" target="_blank" rel="noopener" data-accreditation>'));
+
+// Myślniki: tylko zwykły „-” (także w treściach z CSS i w tekstach wstawianych przez JS).
+{
+  const css = await readFile(path.join(root, 'assets/css/main.css'), 'utf8');
+  const js = await readFile(path.join(root, 'assets/js/main.js'), 'utf8');
+  const cssContent = [...css.matchAll(/content:\s*(['"])(.*?)\1/g)].map((m) => m[2]).filter((t) => /[–—]/.test(t));
+  const jsCode = js.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\s\/\/ .*$/gm, '');
+  const jsStrings = [...jsCode.matchAll(/(['"])((?:\\.|(?!\1).)*)\1/g)].map((m) => m[2]).filter((t) => /[–—]/.test(t));
+  check('Myślniki: brak „–” i „—” w HTML, w content: z CSS i w tekstach JS', !/[–—]/.test(html) && !cssContent.length && !jsStrings.length, [...cssContent, ...jsStrings].join(' | '));
+}
+// Fonty: na stronie tylko znaki, które mają odchudzone pliki (podstawowa łacina, Latin-1, polskie litery, typografia).
+{
+  const js = await readFile(path.join(root, 'assets/js/main.js'), 'utf8');
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ') + js.replace(/\/\*[\s\S]*?\*\//g, '');
+  const ok = (c) => c <= 0xFF || [0x104, 0x105, 0x106, 0x107, 0x118, 0x119, 0x141, 0x142, 0x143, 0x144, 0x15A, 0x15B, 0x179, 0x17A, 0x17B, 0x17C].includes(c) || (c >= 0x2000 && c <= 0x206F) || c === 0x20AC || c === 0x2122;
+  const bad = [...new Set([...text].filter((ch) => !ok(ch.codePointAt(0))))];
+  check('Fonty: wszystkie znaki strony są w plikach fontów (polskie litery, Latin-1)', bad.length === 0, bad.join(' '));
+}
+check('config.js nie blokuje renderowania (defer, przed main.js)', /<script src="assets\/js\/config\.js\?v=[0-9a-f]{8}" defer><\/script>[\s\S]*<script src="assets\/js\/main\.js\?v=[0-9a-f]{8}" defer>/.test(html));
+check('Linki w nowej karcie mają informację dla czytników ekranu', [...html.matchAll(/<a\b([^>]*target="_blank"[^>]*)>([\s\S]*?)<\/a>/g)].every((m) => /data-ticket|data-accreditation/.test(m[1]) || /otwiera się w nowej karcie/.test(m[0])));
 
 /* ===== 2. Desktop ===== */
 {
@@ -190,6 +210,8 @@ check('Akredytacje: przycisk z adresem formularza w HTML (formularz kontaktowy L
   await page.keyboard.press('Tab');
   check('Klawiatura: widoczny wskaźnik fokusu', await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle !== 'none'));
   for (const [sel, name] of [['#wideo', 'po-desktop-tiktok'], ['#djmag', 'po-desktop-djmag'], ['#artysta', 'po-desktop-bio'], ['#love', 'po-desktop-love'], ['#support', 'po-desktop-skytech'], ['#bilety', 'po-desktop-bilety'], ['#media', 'po-desktop-media'], ['.footer', 'po-desktop-stopka']]) await shotSection(page, sel, name);
+  const pseudo = await page.evaluate(() => [...document.querySelectorAll('body *')].flatMap((el) => ['::before', '::after'].map((p) => getComputedStyle(el, p).content)).filter((c) => /[–—]/.test(c)));
+  check('Desktop: wyrenderowane ::before/::after bez „–” i „—”', pseudo.length === 0, pseudo.slice(0, 3).join(' | '));
   check('Desktop: konsola bez błędów i ostrzeżeń', log.length === 0, log.join(' | '));
   await ctx.close();
 }
@@ -206,6 +228,9 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   const navBox = await page.locator('[data-nav]').boundingBox();
   check(`${label}: menu otwiera się na całą wysokość ekranu`, await page.locator('[data-nav]').isVisible() && (await page.getAttribute('[data-nav-toggle]', 'aria-expanded')) === 'true' && navBox && navBox.height > vp.height * 0.8, navBox ? `wysokość panelu ${Math.round(navBox.height)}px` : '');
   if (label.startsWith('iPhone')) await shot(page, 'po-mobile-menu');
+  let trapped = true;
+  for (let i = 0; i < 16; i++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-header]')))) trapped = false; }
+  check(`${label}: Tab w otwartym menu nie wychodzi poza menu`, trapped && await page.evaluate(() => document.querySelector('main').hasAttribute('inert')));
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   check(`${label}: ESC zamyka menu i zwraca fokus`, !(await page.locator('[data-nav]').isVisible()) && await page.evaluate(() => document.activeElement.matches('[data-nav-toggle]')));
   await page.click('[data-nav-toggle]'); await page.waitForTimeout(300);
@@ -233,6 +258,8 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   });
   await page.waitForTimeout(300);
   check(`${label}: swipe w lightboxie → następne zdjęcie`, (await page.textContent('[data-lb-count]')).trim() === '3 / 7');
+  const lbW = await page.$eval('[data-lb-img]', (i) => +((i.currentSrc.match(/-(\d+)\.(avif|jpg)/) || [])[1] || 0));
+  check(`${label}: lightbox wybiera rozmiar do ekranu (nie największy plik)`, lbW > 0 && lbW <= 1600, `${lbW}w`);
   if (label.startsWith('iPhone')) await shot(page, 'po-mobile-lightbox');
   await page.click('.lightbox__btn--close'); await page.waitForTimeout(400);
   if (label.startsWith('iPhone')) {
@@ -273,6 +300,16 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await ctx.close();
 }
 
+/* ===== 5b. Bardzo wysokie okno (render robota wyszukiwarki) ===== */
+{
+  const { ctx, page, log } = await open({ width: 412, height: 6000 }, { mobile: true });
+  await page.waitForTimeout(400);
+  const hidden = await page.$$eval('.reveal', (els) => els.filter((e) => getComputedStyle(e).opacity === '0').length);
+  check('Wysokie okno (np. Googlebot): cała treść widoczna od razu', hidden === 0, `ukrytych: ${hidden}`);
+  check('Wysokie okno: konsola bez błędów', log.length === 0, log.join(' | '));
+  await ctx.close();
+}
+
 /* ===== 6. Bez JavaScriptu ===== */
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
@@ -280,6 +317,8 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await page.goto(BASE + 'index.html');
   const vis = await page.locator('#tickets-title').isVisible();
   check('Bez JS: treść i nagłówki widoczne', vis);
+  const openPanels = await page.$$eval('.acc__panel', (els) => els.filter((e) => e.getBoundingClientRect().height > 5).length);
+  check('Bez JS: odpowiedzi FAQ widoczne (panele otwarte)', openPanels === (await page.locator('.acc__panel').count()) && openPanels > 10, `otwartych: ${openPanels}`);
   await ctx.close();
 }
 
@@ -303,6 +342,20 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   check('Pixel: wejście w sekcję biletów → ViewContent', q3.some((a) => a[0] === 'track' && a[1] === 'ViewContent'));
   check('Pixel: konsola bez błędów (poza zablokowanym w teście skryptem Meta)', log.filter((l) => !/Failed to load resource/.test(l)).length === 0, log.join(' | '));
   await ctx.close();
+  const w = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true, query: 'index.html?utm_source=instagram&utm_medium=social' });
+  check('UTM: nic nie jest zapisywane w przeglądarce przed zgodą', await w.page.evaluate(() => sessionStorage.length === 0 && localStorage.length === 0 && document.cookie === ''));
+  await w.page.click('[data-consent-accept]'); await w.page.waitForTimeout(400);
+  await w.page.evaluate(() => { document.cookie = '_ga=GA1.1.1.1; path=/'; document.cookie = '_fbp=fb.1.1.1; path=/'; });
+  const hitsBefore = w.trackerHits.length;
+  await w.page.click('[data-consent-open]'); await w.page.waitForTimeout(200);
+  check('Zgoda: „Ustawienia cookies” przenosi fokus do banera', await w.page.evaluate(() => !!document.activeElement.closest('[data-consent]')));
+  await w.page.uncheck('[data-consent-analytics]'); await w.page.uncheck('[data-consent-marketing]');
+  await Promise.all([w.page.waitForEvent('load'), w.page.click('[data-consent-save]')]);
+  await w.page.waitForTimeout(500);
+  await w.page.evaluate(() => document.addEventListener('click', (e) => e.preventDefault()));
+  await w.page.click('[data-ticket="hero"]');
+  check('Zgoda: wycofanie → przeładowanie, brak Meta i GA4, ciasteczka _ga i _fbp usunięte', w.trackerHits.length === hitsBefore && !(await w.page.evaluate(() => typeof window.fbq === 'function')) && (await w.page.evaluate(() => !/_ga=|_fbp=/.test(document.cookie))));
+  await w.ctx.close();
   const c2 = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
   await c2.page.click('[data-consent-reject]'); await c2.page.waitForTimeout(300);
   await c2.page.reload({ waitUntil: 'networkidle' });

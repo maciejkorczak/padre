@@ -35,16 +35,20 @@ Stan na 19.10.2026, po uruchomieniu strony.
 
 ## 4. Po starcie (SEO)
 
-1. **Google Search Console**: dodaj usługę „Domena” `padreguilherme.pl` i zweryfikuj ją rekordem TXT w DNS home.pl (albo wpisz kod w `config.js` → `googleSiteVerification`). Potem: Mapy witryny → `https://padreguilherme.pl/sitemap.xml` → „Sprawdź URL” → „Poproś o zindeksowanie”.
+1. **Google Search Console**: dodaj usługę „Domena” `padreguilherme.pl` i zweryfikuj ją rekordem TXT w DNS home.pl (albo wpisz kod w `config.js` → `googleSiteVerification`). Potem: Mapy witryny → `https://padreguilherme.pl/sitemap.xml` → „Sprawdź URL” → „Poproś o zindeksowanie”. W „Sprawdź URL” → „Wyświetl sprawdzoną stronę” → „Zrzut ekranu” cała treść powinna być widoczna.
 2. **Bing Webmaster Tools**: import z Search Console (Bing zasila też ChatGPT i Copilota).
-3. **Test wyników z elementami rozszerzonymi** (search.google.com/test/rich-results): powinien pokazać wydarzenie (MusicEvent) i FAQ.
-4. **Facebook Sharing Debugger** (developers.facebook.com/tools/debug): wklej adres i kliknij „Scrape again”. Od tego momentu link na Facebooku, Messengerze i Instagramie pokazuje grafikę i opis.
-5. **PageSpeed Insights** na żywej domenie: wynik do raportu.
+3. **IndexNow** (Bing, Yandex, Seznam): plik klucza `456ef02acca8746a616f682133147f7c.txt` jest w paczce (katalog główny). Po każdym wgraniu nowej wersji wystarczy otworzyć w przeglądarce:
+   `https://api.indexnow.org/indexnow?url=https://padreguilherme.pl/&key=456ef02acca8746a616f682133147f7c` (odpowiedź 200 lub 202 = przyjęte).
+4. **Test wyników z elementami rozszerzonymi** (search.google.com/test/rich-results): powinien pokazać wydarzenie (MusicEvent). Uwaga: Google nie wyświetla wyników „wydarzeń” w Polsce, a wyniki FAQ wyłączył w 2026 r.; dane zostają, bo pomagają zrozumieć stronę (także Bingowi).
+5. **Facebook Sharing Debugger** (developers.facebook.com/tools/debug): wklej adres i kliknij „Scrape again”. Od tego momentu link na Facebooku, Messengerze i Instagramie pokazuje grafikę i opis.
+6. **PageSpeed Insights** na żywej domenie: wynik do raportu.
+7. **Certyfikat SSL**: łańcuch wymaga poprawki po stronie home.pl (Android 13 i starszy, iOS 15). Wiadomość: docs/AUDYT-2026-10-20.md, punkt 1.
 
 ## 5. Meta Pixel
 
 - **Zainstalowany (19.10.2026):** piksel `1732539551141809`, ten sam, który działa po stronie eBilet. Zakupy raportuje eBilet, strona raportuje ruch i kliknięcia.
 - Zgodnie z RODO piksel ładuje się dopiero po zgodzie na cookies marketingowe. Przy pierwszej wizycie widać kompaktowy baner („Akceptuję” / „Tylko niezbędne” / „Ustawienia”), a w stopce link „Ustawienia cookies”.
+- Wycofanie zgody w „Ustawienia cookies” wyłącza piksel i GA4, usuwa ich ciasteczka (`_fbp`, `_fbc`, `_ga`) i przeładowuje stronę. Zgoda jest ważna 12 miesięcy; zmiana `CONSENT_V` w `main.js` (np. po dodaniu nowego narzędzia) pyta wszystkich ponownie.
 - Kod jest wpięty w nasz skrypt (`config.js` → `metaPixelId`), a nie wklejony jako osobny snippet. Pomijamy część `<noscript>` z obrazkiem, bo wysyłałaby PageView bez zgody.
 - Zdarzenia: `PageView` (po zgodzie), `ViewContent` (wejście w sekcję biletów), `ClickBuyTicket` (kliknięcie „Kup bilet”, z parametrem `cta_location`: hero, menu, bio, love, bilety, faq, final, sticky). Nie wysyłamy `InitiateCheckout` ani `Purchase`, żeby nie dublować zdarzeń eBilet.
 - **Sprawdzenie po starcie:** rozszerzenie Meta Pixel Helper (po kliknięciu „Akceptuję”) albo Menedżer zdarzeń → „Testowanie zdarzeń” → adres strony. Warto też zweryfikować domenę padreguilherme.pl w Meta Business (rekord TXT w DNS albo `facebookDomainVerification` w `config.js`).
@@ -77,7 +81,7 @@ Stan na 19.10.2026, po uruchomieniu strony.
 - Instagram: link w bio, naklejka z linkiem w Stories, przypięte posty z „link w bio”. Rolki z fragmentem „Pan jest pasterzem moim” (Padre + Skytech).
 - TikTok: link w bio, wideo z wcześniejszych koncertów z odsyłaczem do Łodzi.
 
-**Oznaczanie ruchu (UTM)**, żeby wiedzieć, co sprzedaje. Strona zapamiętuje te parametry i przekazuje je dalej do linku „Kup bilet”.
+**Oznaczanie ruchu (UTM)**, żeby wiedzieć, co sprzedaje. Strona przekazuje te parametry dalej do linku „Kup bilet” (nie zapisuje ich w przeglądarce).
 
 | Kanał | Przykład |
 |-------|----------|

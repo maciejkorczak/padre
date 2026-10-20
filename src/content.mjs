@@ -34,7 +34,7 @@ export const POSTERS = [
   { img: 'plakat-01', title: 'Afterlife', where: 'Hï Ibiza', href: 'https://www.after.life/ibiza24', alt: 'Plakat Afterlife w Hï Ibiza z Padre Guilherme w składzie' },
   { img: 'plakat-02', title: 'Medusa Festival', where: 'Hiszpania', href: 'https://medusasunbeach.com', alt: 'Plakat: Padre Guilherme na Medusa Festival' },
   { img: 'plakat-03', title: 'Zamna Festival', where: 'Santiago, Chile', href: 'https://zamnafestival.com', alt: 'Plakat: Padre Guilherme na Zamna Festival w Santiago de Chile' },
-  { img: 'plakat-04', title: 'Hï Ibiza', where: 'Recorded Live', href: 'https://soundcloud.com/padreguilherme', alt: 'Okładka miksu Padre Guilherme nagranego na żywo w Hï Ibiza' },
+  { img: 'plakat-04', title: 'Hï Ibiza', where: 'Recorded Live', lang: 'en', href: 'https://soundcloud.com/padreguilherme', alt: 'Okładka miksu Padre Guilherme nagranego na żywo w Hï Ibiza' },
   { img: 'plakat-05', title: 'Input', where: 'Barcelona', href: 'https://ra.co/events/2097820', alt: 'Plakat: Padre Guilherme w klubie Input w Barcelonie' },
   { img: 'plakat-06', title: 'Lab The Club', where: 'Madryt', href: 'https://www.labtheclub.com', alt: 'Plakat: Padre Guilherme w Lab The Club w Madrycie' },
   { img: 'plakat-07', title: 'Sante Festival', where: 'São Paulo', href: 'https://www.ticket360.com.br/evento/30368/ingressos-sante-festival-2025', alt: 'Plakat: Padre Guilherme na Sante Festival w São Paulo' },

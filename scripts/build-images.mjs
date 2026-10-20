@@ -2,7 +2,7 @@
 // do assets/img oraz manifest z wymiarami (używany przez scripts/build-html.mjs).
 // Uruchomienie: npm run images
 import sharp from 'sharp';
-import { mkdir, writeFile, readdir, stat } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,9 +11,10 @@ const SRC = path.join(root, 'source/images');
 const OUT = path.join(root, 'assets/img');
 
 // Szerokości dobrane do roli zdjęcia na stronie. Większe od oryginału są pomijane.
-const PHOTO = [640, 1024, 1600, 2000];
+// 1200: popularne telefony (390 px x3, 412 px x2,6) potrzebują ok. 1100-1200 px, bez tego pobierały 1600.
+const PHOTO = [640, 1024, 1200, 1600, 2000];
 // Zdjęcia na całą szerokość ekranu: na ekranach Retina potrzeba ok. 3000 px.
-const FULL = [640, 1024, 1600, 2000, 2560, 3200];
+const FULL = [640, 1024, 1200, 1600, 2000, 2560, 3200];
 const SPECS = {
   // Hero z oryginału 3981 px (IMG_5125). Nazwa „hero-hd”: poprzednie pliki „hero-*” były z kopii 2400 px.
   'hero-hd': { from: 'hero', widths: [960, 1440, 1920, 2560, 3200] },
@@ -22,6 +23,8 @@ const SPECS = {
   artysta: { widths: PHOTO },
   finale: { widths: FULL },
   'love-scena': { widths: FULL },
+  // Kadr pionowy na telefon (tło sekcji „Love is My Religion”): krzyż na scenie w środku kadru.
+  'love-scena-m': { from: 'love-scena', crop: { left: 490, top: 0, width: 1000, height: 1334 }, widths: [640, 1000] },
   media: { widths: PHOTO },
   plan: { widths: [640, 1024, 1440] },
   skytech: { widths: [480, 800, 1200] },
@@ -41,6 +44,13 @@ const SPECS = {
 const POSTER = { widths: [400, 800] };
 const TIKTOK = { widths: [270, 540] };
 
+// Ustawienia kodowania. Zmiana ENCODER wymusza ponowne kodowanie wszystkich wariantów.
+// AVIF 4:2:0 dla zdjęć (mniejsze pliki, ta sama ostrość); grafiki z tekstem (plakaty, DJ Mag) zostają 4:4:4.
+const ENCODER = 'avif-q60-e6-420/jpeg-q82-mozjpeg';
+const graphic = (name) => name.startsWith('plakat-') || name.startsWith('djmag-');
+const previous = await readFile(path.join(OUT, 'manifest.json'), 'utf8').then(JSON.parse, () => ({}));
+const force = previous._encoder !== ENCODER;
+
 const files = (await readdir(SRC)).filter((f) => f.endsWith('.jpg'));
 const sourcesOnly = new Set(Object.values(SPECS).map((s) => s.from).filter(Boolean));
 for (const f of files) {
@@ -49,7 +59,7 @@ for (const f of files) {
 }
 
 await mkdir(OUT, { recursive: true });
-const manifest = {};
+const manifest = { _encoder: ENCODER };
 
 for (const [name, spec] of Object.entries(SPECS)) {
   const srcFile = path.join(SRC, `${spec.from || name}.jpg`);
@@ -67,9 +77,9 @@ for (const [name, spec] of Object.entries(SPECS)) {
   for (const w of uniq) {
     // Pomija warianty, które już istnieją i są nowsze od oryginału (szybsze przebudowy).
     const fresh = await Promise.all(['avif', 'jpg'].map((ext) => stat(path.join(OUT, `${name}-${w}.${ext}`)).then((st) => st.mtimeMs >= srcTime, () => false)));
-    if (fresh.every(Boolean)) continue;
+    if (!force && fresh.every(Boolean)) continue;
     const img = decoded().resize({ width: w, withoutEnlargement: true });
-    await img.clone().avif({ quality: 60, effort: 6 }).toFile(path.join(OUT, `${name}-${w}.avif`));
+    await img.clone().avif({ quality: 60, effort: 6, chromaSubsampling: graphic(name) ? '4:4:4' : '4:2:0' }).toFile(path.join(OUT, `${name}-${w}.avif`));
     await img.clone().jpeg({ quality: 82, mozjpeg: true, progressive: true }).toFile(path.join(OUT, `${name}-${w}.jpg`));
   }
   manifest[name] = { w: meta.width, h: meta.height, widths: uniq };

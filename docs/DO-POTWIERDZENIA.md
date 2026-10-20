@@ -1,8 +1,19 @@
 # Do potwierdzenia przed publikacją
 
-Stan na 18.10.2026 (po poprawkach Marka). Wszystkie punkty mają w kodzie bezpieczny punkt podłączenia: brakujące elementy są ukryte albo pokazują uczciwy komunikat. Na produkcji nie ma zmyślonych danych.
+Stan na 20.10.2026 (po audycie końcowym, szczegóły: docs/AUDYT-2026-10-20.md). Wszystkie punkty mają w kodzie bezpieczny punkt podłączenia: brakujące elementy są ukryte albo pokazują uczciwy komunikat. Na produkcji nie ma zmyślonych danych.
 
 Legenda: **BLOKER**: bez tego strona nie powinna wyjść na produkcję. **WAŻNE**: do uzupełnienia przed startem kampanii. **OPCJA**: poprawi stronę, ale nie blokuje.
+
+## Po audycie 20.10.2026: do zrobienia poza kodem
+
+| # | Co | Status | Kto |
+|---|----|--------|-----|
+| A | **Łańcuch certyfikatu SSL** | **PILNE**: home.pl wysyła samopodpisany „Certum Trusted Root CA” (2018), którego nie ma Android 13 i starszy ani iOS 15. Przeglądarka w Instagramie/Facebooku na takich telefonach może pokazać błąd, WhatsApp może nie zrobić podglądu. Gotowa wiadomość do home.pl: docs/AUDYT-2026-10-20.md, punkt 1. | home.pl (zgłoszenie od właściciela konta) |
+| B | **Google Search Console i Bing Webmaster** | **WAŻNE**: domena niezweryfikowana (brak rekordu TXT), Bing nie ma strony w wynikach. | Właściciel domeny |
+| C | **Linki do strony** | **WAŻNE**: live2listen.com i strona wydarzenia Atlas Areny nie linkują do padreguilherme.pl; adres w bio na Instagramie, TikToku i Facebooku. | Live2Listen, Atlas Arena |
+| D | **Polityka prywatności** | **WAŻNE**: polityka Live2Listen nie opisuje GA4, Meta Pixel, odbiorców, transferu do USA ani wycofania zgody; zawiera zdanie o zgodzie przez pozostanie na stronie. Patrz punkt 8. | Live2Listen / prawnik |
+| E | **Meta** | Weryfikacja domeny, „Scrape Again” po wgraniu paczki, decyzja o zdarzeniach automatycznych i bramce Conversions API. | Właściciel piksela |
+| F | **IndexNow (Bing)** | Plik klucza jest w paczce. Po wgraniu można zgłosić adres do Binga jednym zapytaniem (docs/WDROZENIE.md, sekcja 4). | — |
 
 ## Integracje i linki
 
@@ -15,7 +26,7 @@ Legenda: **BLOKER**: bez tego strona nie powinna wyjść na produkcję. **WAŻNE
 | 5 | **Press pack** | **WAŻNE**: brak zatwierdzonego pliku. Przycisk „Pobierz press pack” pojawi się sam po wpisaniu adresu. | `config.js` → `pressPackUrl` | Management / Booking Artist Agency |
 | 6 | **Newsletter „Bądź na bieżąco”** | **OPCJA**: formularz jest gotowy (walidacja, zgoda, honeypot, obsługa błędów), ale wyłączony. Brakuje backendu, administratora danych i polityki prywatności dla zapisu. Poprzednia wersja pokazywała fałszywe „Zapisane”; usunięte. | `config.js` → `newsletterEndpoint`, `newsletterPrivacyUrl` | Organizator (administrator danych) |
 | 7 | **Analityka: GA4 i Meta Pixel** | ✅ GA4 G-MQFK04FB3F i Meta Pixel 1732539551141809 włączone (19.10), oba dopiero po zgodzie. | `config.js` → `ga4Id`, `metaPixelId` | — |
-| 8 | **Polityka prywatności dla tej domeny** | **WAŻNE**: stopka linkuje do polityki Live2Listen (strona działa). Trzeba ustalić, kto jest administratorem danych na padreguilherme.pl (analityka, newsletter) i czy ta polityka to obejmuje. | `config.js` → `privacyPolicyUrl` | Prawnik / organizator |
+| 8 | **Polityka prywatności dla tej domeny** | **WAŻNE**: stopka i baner linkują do polityki Live2Listen. Audyt 20.10: polityka obejmuje ogólnie strony wydarzeń L2L, ale nie wymienia GA4 (G-MQFK04FB3F), Meta Pixel (1732539551141809, z bramką Conversions API), celów, okresów (`_ga` ok. 13 mies., `_fbp` 90 dni), transferu do USA ani wycofania zgody („Ustawienia cookies”), a zdanie o zgodzie przez pozostanie na stronie jest sprzeczne z banerem. Najprościej: krótka sekcja lub strona „Cookies na padreguilherme.pl” i podmiana adresu. | `config.js` → `privacyPolicyUrl` | Prawnik / organizator |
 
 ## Treści i fakty
 
@@ -40,4 +51,4 @@ Legenda: **BLOKER**: bez tego strona nie powinna wyjść na produkcję. **WAŻNE
 
 - Hosting z kompresją gzip lub brotli i długim cache dla `assets/` (przykład w README). Bez kompresji LCP na telefonie wynosi 2,9 s zamiast 2,1 s.
 - Po ustawieniu domeny: `npm run html`, `npm test`, Lighthouse na docelowym serwerze.
-- Testy w Safari (iOS/macOS) i Firefoxie: w tym środowisku był dostępny tylko Chromium.
+- Testy w Safari (iOS/macOS) i Firefoxie: w tym środowisku był dostępny tylko Chromium. Audyt 20.10 sprawdził zgodność kodu z Safari 15.4+, Firefoxem 128+, Samsung Internet i przeglądarkami w aplikacjach na podstawie danych o obsłudze funkcji (MDN, caniuse): brak elementów, które by się psuły. Warto jeszcze raz otworzyć stronę na prawdziwym iPhonie i Androidzie (także z Instagrama).

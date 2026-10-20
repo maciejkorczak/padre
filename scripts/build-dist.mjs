@@ -12,8 +12,11 @@ execFileSync('node', [path.join(root, 'scripts/build-html.mjs')], { stdio: 'inhe
 
 const html = await readFile(path.join(root, 'index.html'), 'utf8');
 const css = await readFile(path.join(root, 'assets/css/main.css'), 'utf8');
-const files = new Set(['index.html', '.htaccess', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'favicon.ico', 'assets/og-image.jpg', 'assets/apple-touch-icon.png', 'assets/css/main.css', 'assets/js/config.js', 'assets/js/main.js']);
+// Klucz IndexNow (Bing, Yandex, Seznam): plik <klucz>.txt w katalogu głównym, treść = klucz.
+const INDEXNOW_KEY = '456ef02acca8746a616f682133147f7c';
+const files = new Set(['index.html', '.htaccess', 'robots.txt', 'sitemap.xml', 'favicon.svg', 'favicon.ico', `${INDEXNOW_KEY}.txt`, 'assets/og-image.jpg', 'assets/apple-touch-icon.png', 'assets/css/main.css', 'assets/js/config.js', 'assets/js/main.js']);
 for (const m of html.matchAll(/(href|src|srcset|imagesrcset|data-lb-avif|data-lb-jpg)="([^"]+)"/g)) {
+  if (m[2].startsWith('data:')) continue; // obrazek wpisany w HTML (np. pusty kadr lightboxa)
   // Przecinki rozdzielają adresy tylko w srcset; w href mogą być częścią adresu (np. link eBilet).
   for (const part of /srcset/.test(m[1]) ? m[2].split(',') : [m[2]]) {
     const p = part.trim().split(/\s+/)[0].split('?')[0];
@@ -21,6 +24,10 @@ for (const m of html.matchAll(/(href|src|srcset|imagesrcset|data-lb-avif|data-lb
   }
 }
 for (const m of css.matchAll(/url\((?:'|")?\.\.\/([^)'"]+)/g)) files.add('assets/' + m[1]);
+// Adresy z mapy strony i danych strukturalnych (np. zdjęcia dla Google) też muszą trafić na serwer.
+const sitemap = await readFile(path.join(root, 'sitemap.xml'), 'utf8');
+const jsonld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] || '';
+for (const m of (sitemap + jsonld).matchAll(/https:\/\/padreguilherme\.pl\/([^"<\s?#]+)/g)) files.add(m[1]);
 
 let bytes = 0;
 for (const f of [...files].sort()) {
@@ -30,6 +37,9 @@ for (const f of [...files].sort()) {
   await copyFile(src, path.join(out, f));
   bytes += (await stat(src)).size;
 }
+// Ikona także w katalogu głównym: część aplikacji (iOS, podglądy linków) pyta o /apple-touch-icon.png bez czytania <link>.
+await copyFile(path.join(root, 'assets/apple-touch-icon.png'), path.join(out, 'apple-touch-icon.png'));
+files.add('apple-touch-icon.png');
 execFileSync('zip', ['-q', '-r', '-X', '../padreguilherme.pl.zip', '.'], { cwd: out });
 const zip = (await stat(path.join(root, 'dist/padreguilherme.pl.zip'))).size;
 console.log(`OK: dist/padreguilherme.pl — ${files.size} plików, ${(bytes / 1048576).toFixed(1)} MB; zip ${(zip / 1048576).toFixed(1)} MB`);

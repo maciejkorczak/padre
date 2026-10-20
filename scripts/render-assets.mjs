@@ -10,7 +10,7 @@ const BASE = process.env.SITE_URL || 'http://localhost:8080/';
 const head = `<base href="${BASE}"><link rel="stylesheet" href="assets/css/main.css"><style>html,body{margin:0;overflow:hidden;animation:none!important}*{animation:none!important}</style>`;
 
 const og = `<!doctype html><html><head>${head}</head><body style="width:1200px;height:630px;position:relative;background:#0D1513">
-  <img src="assets/img/hero-1440.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:62% 64%">
+  <img src="assets/img/hero-hd-1440.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:62% 64%">
   <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,21,19,.92) 0%,rgba(13,21,19,.6) 42%,rgba(13,21,19,0) 70%),linear-gradient(180deg,rgba(13,21,19,.2),rgba(13,21,19,0) 40%,rgba(13,21,19,.6))"></div>
   <div style="position:absolute;left:64px;top:70px;width:560px">
     <img src="assets/logo-padre-guilherme.svg" style="width:470px;height:auto">
@@ -33,6 +33,9 @@ for (const [html, w, h, out, fmt] of [[og, 1200, 630, 'assets/og-image.jpg', 'jp
   await page.goto(BASE + 'robots.txt'); // to samo pochodzenie: fonty wymagają CORS
   await page.setContent(html, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
+  // Brakujące zdjęcie albo logo = błąd (wcześniej skrypt zapisywał grafikę bez zdjęcia artysty).
+  const missing = await page.evaluate(() => [...document.images].filter((i) => !i.complete || !i.naturalWidth).map((i) => i.src));
+  if (missing.length) throw new Error(`${out}: nie wczytano ${missing.join(', ')}`);
   const buf = await page.screenshot({ type: 'png' });
   const img = sharp(buf);
   await (fmt === 'jpg' ? img.jpeg({ quality: 86, mozjpeg: true }) : img.png()).toFile(path.join(root, out));

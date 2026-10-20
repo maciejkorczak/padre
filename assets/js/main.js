@@ -21,29 +21,29 @@
   };
 
   /* ---------- Kampanie (UTM) ---------- */
-  var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid'];
+  // Tylko z adresu strony i tylko w pamięci: nic nie jest zapisywane w przeglądarce przed zgodą.
+  // Strona ma jeden adres (nawigacja przez #kotwice), więc parametry zostają w adresie do końca wizyty.
+  var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
   var campaign = (function () {
     var found = {};
     try {
       var qs = new URLSearchParams(location.search);
       UTM_KEYS.forEach(function (k) { if (qs.get(k)) found[k] = qs.get(k).slice(0, 150); });
     } catch (e) { /* brak URLSearchParams */ }
-    var ss = (function () { try { return sessionStorage; } catch (e) { return null; } })();
-    if (Object.keys(found).length) { if (ss) store.set('pg_utm', found, ss); return found; }
-    return (ss && store.get('pg_utm', ss)) || {};
+    return found;
   })();
 
   /* ---------- Pomiar ---------- */
   window.dataLayer = window.dataLayer || [];
   function deviceType() { var w = window.innerWidth; return w < 768 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop'; }
   function track(name, params) {
-    var payload = Object.assign({ event: name, device_type: deviceType() }, campaign, params || {});
-    window.dataLayer.push(payload);
+    var payload = Object.assign({ device_type: deviceType() }, campaign, params || {});
+    window.dataLayer.push(Object.assign({ event: name }, payload));
     if (typeof window.gtag === 'function' && cfg.ga4Id && !cfg.gtmId && name !== 'page_view') {
-      var p = Object.assign({}, payload); delete p.event; window.gtag('event', name, p);
+      window.gtag('event', name, Object.assign({}, payload));
     }
     if (typeof window.fbq === 'function') {
-      if (name === 'view_event') window.fbq('track', 'ViewContent', { content_name: 'Padre Guilherme — Atlas Arena 2027' });
+      if (name === 'view_event') window.fbq('track', 'ViewContent', { content_name: 'Padre Guilherme - Atlas Arena 2027' });
       if (name === 'click_buy_ticket') window.fbq('trackCustom', 'ClickBuyTicket', { cta_location: payload.cta_location });
     }
   }
@@ -58,6 +58,7 @@
   var loaded = {};
   function loadScript(src) { var s = doc.createElement('script'); s.async = true; s.src = src; doc.head.appendChild(s); }
   function applyConsent(c) {
+    if (c.analytics && cfg.ga4Id) window['ga-disable-' + cfg.ga4Id] = false;
     window.gtag('consent', 'update', {
       analytics_storage: c.analytics ? 'granted' : 'denied',
       ad_storage: c.marketing ? 'granted' : 'denied',
@@ -72,7 +73,7 @@
       loaded.ga4 = true;
       loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(cfg.ga4Id));
       window.gtag('js', new Date());
-      window.gtag('config', cfg.ga4Id, { send_page_view: true });
+      window.gtag('config', cfg.ga4Id, { send_page_view: true, cookie_flags: 'secure;samesite=lax' });
     }
     if (c.marketing && cfg.metaPixelId && !loaded.meta) {
       loaded.meta = true;
@@ -83,6 +84,34 @@
       window.fbq('track', 'PageView');
     }
   }
+  // Wersja zgody: podnieś, gdy zmienią się narzędzia lub cele (np. nowy piksel). Zgoda ważna 12 miesięcy.
+  var CONSENT_V = 1, CONSENT_TTL = 365 * 864e5;
+  function readConsent() {
+    var c = store.get('pg_consent');
+    return c && c.v === CONSENT_V && Date.now() - c.ts < CONSENT_TTL ? c : null;
+  }
+  function expireCookies(names) {
+    var host = location.hostname.replace(/^www\./, '');
+    names.forEach(function (n) {
+      ['', '; domain=' + host, '; domain=.' + host].forEach(function (d) { doc.cookie = n + '=; Max-Age=0; path=/' + d; });
+    });
+  }
+  // Brak zgody na kategorię: blokada narzędzia i usunięcie jego ciasteczek (także tych z wcześniejszej zgody).
+  // Zwraca true, gdy skrypt narzędzia był już wczytany w tej wizycie: wtedy strona się przeładowuje.
+  function withdraw(c) {
+    var reload = false;
+    if (!c.analytics && cfg.ga4Id) {
+      window['ga-disable-' + cfg.ga4Id] = true;
+      expireCookies(['_ga', '_ga_' + cfg.ga4Id.replace(/^G-/, '')]);
+      if (loaded.ga4 || loaded.gtm) reload = true;
+    }
+    if (!c.marketing) {
+      if (typeof window.fbq === 'function') window.fbq('consent', 'revoke');
+      expireCookies(['_fbp', '_fbc']);
+      if (loaded.meta || loaded.gtm) reload = true;
+    }
+    return reload;
+  }
   function initConsent() {
     var box = $('[data-consent]');
     if (!hasTrackers || !box) return;
@@ -92,20 +121,37 @@
     var cbM = $('[data-consent-marketing]', box);
     var btnSave = $('[data-consent-save]', box);
     var btnCustom = $('[data-consent-custom]', box);
-    function save(c) { c.ts = Date.now(); store.set('pg_consent', c); applyConsent(c); box.hidden = true; }
+    var opener = null;
+    // Miejsce pod banerem: element z fokusem nie chowa się za nim (scroll-padding) i da się dojść do końca strony.
+    function reserve(on) {
+      var h = on ? (box.offsetHeight + 24) + 'px' : '';
+      root.style.scrollPaddingBottom = h; doc.body.style.paddingBottom = h;
+    }
+    function save(c) {
+      c.v = CONSENT_V; c.ts = Date.now();
+      store.set('pg_consent', c);
+      box.hidden = true; reserve(false);
+      if (withdraw(c)) { location.reload(); return; }
+      applyConsent(c);
+      var back = opener && opener.isConnected ? opener : doc.getElementById('tresc');
+      opener = null;
+      if (back) { if (back.id === 'tresc') back.setAttribute('tabindex', '-1'); back.focus({ preventScroll: true }); }
+    }
     function open(custom) {
-      var saved = store.get('pg_consent') || {};
+      var saved = readConsent() || {};
       cbA.checked = !!saved.analytics; cbM.checked = !!saved.marketing;
       opts.hidden = !custom; btnSave.hidden = !custom; btnCustom.hidden = !!custom;
       box.hidden = false;
+      reserve(true);
     }
     $('[data-consent-accept]', box).addEventListener('click', function () { save({ analytics: true, marketing: true }); });
     $('[data-consent-reject]', box).addEventListener('click', function () { save({ analytics: false, marketing: false }); });
     btnCustom.addEventListener('click', function () { open(true); cbA.focus(); });
     btnSave.addEventListener('click', function () { save({ analytics: cbA.checked, marketing: cbM.checked }); });
     var reopen = $('[data-consent-open]');
-    if (reopen) { reopen.hidden = false; reopen.addEventListener('click', function () { open(true); }); }
-    var saved = store.get('pg_consent');
+    if (reopen) { reopen.hidden = false; reopen.addEventListener('click', function () { opener = reopen; open(true); cbA.focus(); }); }
+    window.addEventListener('resize', function () { if (!box.hidden) reserve(true); });
+    var saved = readConsent();
     if (saved) applyConsent(saved); else open(false);
   }
 
@@ -120,6 +166,7 @@
     } catch (e) { return cfg.ticketUrl; }
   }
   function initTickets() {
+    if (!window.PADRE_CONFIG) return; // brak config.js: zostają linki partnera wpisane do HTML przy budowaniu
     var href = ticketHref();
     $$('[data-ticket-ready]').forEach(function (el) { el.hidden = !href; });
     $$('[data-ticket-pending]').forEach(function (el) { el.hidden = !!href; });
@@ -162,6 +209,7 @@
       label.textContent = open ? 'Zamknij menu' : 'Otwórz menu';
       nav.classList.toggle('is-open', open);
       root.classList.toggle('nav-open', open);
+      $$('main, footer, [data-sticky-cta]').forEach(function (el) { if (open) el.setAttribute('inert', ''); else el.removeAttribute('inert'); });
       updateSticky();
       if (open) { var first = $('a', nav); if (first) first.focus(); } else if (returnFocus) toggle.focus();
     }
@@ -171,7 +219,7 @@
       if (!nav.classList.contains('is-open')) return;
       if (e.key === 'Escape') { setOpen(false, true); return; }
       if (e.key === 'Tab') {
-        var items = [toggle].concat($$('a, button', nav)).concat($$('.site-header__actions a'));
+        var items = $$('a[href], button', header).filter(function (el) { return el.offsetParent !== null; });
         var first = items[0], last = items[items.length - 1];
         if (!header.contains(doc.activeElement)) { e.preventDefault(); first.focus(); }
         else if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -220,7 +268,10 @@
   /* ---------- Pojawianie się elementów ---------- */
   function initReveal() {
     var items = $$('.reveal');
-    if (reduced || !('IntersectionObserver' in window)) { items.forEach(function (el) { el.classList.add('is-in'); }); return; }
+    var all = function () { items.forEach(function (el) { el.classList.add('is-in'); }); };
+    // Okno wyższe niż 2000 px to nie ekran, tylko render (np. robot wyszukiwarki): pokaż wszystko od razu.
+    if (reduced || !('IntersectionObserver' in window) || window.innerHeight > 2000) { all(); return; }
+    window.addEventListener('resize', function () { if (window.innerHeight > 2000) all(); });
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } });
     }, { rootMargin: '0px 0px -6% 0px', threshold: 0.08 });
@@ -279,9 +330,12 @@
       var next = $('[data-rail-next]', rail);
       function state() {
         var max = track.scrollWidth - track.clientWidth;
+        var atStart = track.scrollLeft <= 4, atEnd = track.scrollLeft >= max - 4;
         rail.classList.toggle('is-scrollable', max > 4);
-        prev.disabled = track.scrollLeft <= 4;
-        next.disabled = track.scrollLeft >= max - 4;
+        if (atEnd && doc.activeElement === next && !atStart) prev.focus();
+        if (atStart && doc.activeElement === prev && !atEnd) next.focus();
+        prev.disabled = atStart;
+        next.disabled = atEnd;
       }
       function go(dir) { track.scrollBy({ left: dir * track.clientWidth * 0.8, behavior: reduced ? 'auto' : 'smooth' }); }
       prev.addEventListener('click', function () { go(-1); });
@@ -293,6 +347,8 @@
   }
 
   /* ---------- Rozwijane panele (FAQ, biografia) ---------- */
+  var UNTIL_FOUND = 'onbeforematch' in doc.body;
+  function hide(panel) { if (UNTIL_FOUND) panel.setAttribute('hidden', 'until-found'); else panel.hidden = true; }
   function setPanel(btn, panel, open) {
     btn.setAttribute('aria-expanded', String(open));
     clearTimeout(panel.__t);
@@ -302,24 +358,26 @@
       panel.classList.add('is-open');
     } else {
       panel.classList.remove('is-open');
-      panel.__t = setTimeout(function () { if (btn.getAttribute('aria-expanded') === 'false') panel.hidden = true; }, reduced ? 0 : 420);
+      panel.__t = setTimeout(function () { if (btn.getAttribute('aria-expanded') === 'false') hide(panel); }, reduced ? 0 : 420);
     }
   }
   function initCollapsibles() {
     $$('[data-acc-btn]').forEach(function (btn) {
       var panel = doc.getElementById(btn.getAttribute('aria-controls'));
-      panel.hidden = true;
+      hide(panel);
       btn.addEventListener('click', function () { setPanel(btn, panel, btn.getAttribute('aria-expanded') !== 'true'); });
+      panel.addEventListener('beforematch', function () { setPanel(btn, panel, true); });
     });
     var ex = $('[data-expander]');
     if (ex) {
       var btn = $('[data-expander-btn]', ex), panel = $('[data-expander-panel]', ex), label = $('[data-expander-label]', ex);
-      panel.hidden = true;
+      hide(panel);
       btn.addEventListener('click', function () {
         var open = btn.getAttribute('aria-expanded') !== 'true';
         setPanel(btn, panel, open);
         label.textContent = open ? 'Zwiń historię' : 'Poznaj historię Padre';
       });
+      panel.addEventListener('beforematch', function () { setPanel(btn, panel, true); label.textContent = 'Zwiń historię'; });
     }
   }
 
@@ -352,19 +410,31 @@
     var img = $('[data-lb-img]', lb), source = $('[data-lb-source]', lb), cap = $('[data-lb-caption]', lb), count = $('[data-lb-count]', lb);
     var btnClose = $('.lightbox__btn--close', lb);
     var items = [], index = 0, trigger = null, outside = $$('body > :not([data-lightbox])');
+    // Szerokość, w jakiej zdjęcie wyświetli się w lightboxie (jak w CSS: margines boczny i miejsce na podpis).
+    function slot(b) {
+      var w = +b.getAttribute('data-lb-w'), h = +b.getAttribute('data-lb-h');
+      var side = window.innerWidth >= 768 ? 192 : 32;
+      return Math.ceil(Math.min(window.innerWidth - side, 1600, (window.innerHeight - 170) * w / h)) + 'px';
+    }
     function show(i) {
       index = (i + items.length) % items.length;
       var b = items[index];
       img.classList.add('is-loading');
+      var sz = slot(b);
+      source.sizes = sz; img.sizes = sz;
       source.srcset = b.getAttribute('data-lb-avif');
-      img.src = b.getAttribute('data-lb-jpg');
+      img.srcset = b.getAttribute('data-lb-jpg');
+      img.src = b.getAttribute('data-lb-src');
       img.width = +b.getAttribute('data-lb-w'); img.height = +b.getAttribute('data-lb-h');
-      img.alt = b.getAttribute('data-lb-caption');
+      img.alt = '';
       cap.textContent = b.getAttribute('data-lb-caption');
       count.textContent = (index + 1) + ' / ' + items.length;
-      // Wstępnie pobierz sąsiednie zdjęcia w formacie, który wybiera przeglądarka.
+      // Wstępnie pobierz sąsiednie zdjęcia w tym samym rozmiarze i formacie, który wybierze przeglądarka.
       var avif = /\.avif/.test((b.querySelector('img') || {}).currentSrc || '');
-      [index + 1, index - 1].forEach(function (n) { var nb = items[(n + items.length) % items.length]; var p = new Image(); p.src = nb.getAttribute(avif ? 'data-lb-avif' : 'data-lb-jpg'); });
+      [index + 1, index - 1].forEach(function (n) {
+        var nb = items[(n + items.length) % items.length], p = new Image();
+        p.sizes = slot(nb); p.srcset = nb.getAttribute(avif ? 'data-lb-avif' : 'data-lb-jpg');
+      });
     }
     img.addEventListener('load', function () { img.classList.remove('is-loading'); });
     function open(btn) {
@@ -422,7 +492,8 @@
     var acc = $('[data-accreditation]'), pending = $('[data-accreditation-pending]');
     if (acc && cfg.accreditationReady && cfg.accreditationUrl) {
       acc.href = cfg.accreditationUrl; acc.target = '_blank'; acc.rel = 'noopener'; acc.hidden = false;
-      acc.insertAdjacentHTML('beforeend', '<span class="visually-hidden"> (formularz Press Accreditations, otwiera się w nowej karcie)</span>');
+      var accName = /pressaccreditations/.test(cfg.accreditationUrl) ? 'formularz Press Accreditations' : 'formularz kontaktowy Live2Listen';
+      if (!$('.visually-hidden', acc)) acc.insertAdjacentHTML('beforeend', '<span class="visually-hidden"> (' + accName + ', otwiera się w nowej karcie)</span>');
       if (pending) pending.hidden = true;
       acc.addEventListener('click', function () { track('submit_accreditation', { step: 'outbound_click', link_url: cfg.accreditationUrl }); });
     }
@@ -454,7 +525,7 @@
         body: JSON.stringify({ email: email.value.trim(), consent: true, source: 'padre-atlas-arena-2027', campaign: campaign })
       }).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        say('Dziękujemy. Zgłoszenie zostało przyjęte — sprawdź skrzynkę e-mail.', 'ok');
+        say('Dziękujemy. Zgłoszenie zostało przyjęte. Sprawdź skrzynkę e-mail.', 'ok');
         form.reset();
         track('newsletter_signup', { form: 'badz-na-biezaco' });
       }).catch(function () {
@@ -489,6 +560,7 @@
     var show = mqMobile.matches && !stickyState.heroVisible && !stickyState.stopVisible && !stickyState.typing &&
       !root.classList.contains('nav-open') && !root.classList.contains('lb-open');
     sticky.classList.toggle('is-visible', show);
+    root.classList.toggle('has-sticky', show);
     sticky.setAttribute('aria-hidden', String(!show));
     var a = $('a', sticky); if (a) a.tabIndex = show ? 0 : -1;
   }

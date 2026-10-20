@@ -32,16 +32,35 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/saira-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/saira-latin-500-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/pinyon-script-basic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/manrope-pl.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/saira-pl.woff2" as="font" type="font/woff2" crossorigin>
 <!--pg:preload-hero-->
 <link rel="stylesheet" href="assets/css/main.css">
-<script src="assets/js/config.js"></script>
+<script src="assets/js/config.js" defer></script>
 <script>document.documentElement.classList.add('js');setTimeout(function(){if(!window.__pgReady)document.documentElement.classList.remove('js');},3000);</script>
 <script src="assets/js/main.js" defer></script>
 <!--pg:jsonld-->
 </head>
 <body>
 <a class="skip-link" href="#tresc">Przejdź do treści</a>
+
+<div class="consent" data-consent role="dialog" aria-labelledby="consent-title" aria-describedby="consent-desc" hidden>
+  <p class="consent__title" id="consent-title"><strong>Pliki cookies</strong></p>
+  <p id="consent-desc">Statystyki odwiedzin (Google Analytics) i narzędzia marketingowe (Meta Pixel) uruchamiamy tylko za Twoją zgodą. Szczegóły w <a href="https://www.live2listen.com/prywatnosc" data-privacy-link target="_blank" rel="noopener">polityce prywatności</a>.</p>
+  <div class="consent__opts" data-consent-opts hidden>
+    <label class="check"><input type="checkbox" checked disabled> <span>Niezbędne - zawsze aktywne</span></label>
+    <label class="check"><input type="checkbox" data-consent-analytics> <span>Analityczne (statystyki odwiedzin)</span></label>
+    <label class="check"><input type="checkbox" data-consent-marketing> <span>Marketingowe (remarketing i pomiar reklam)</span></label>
+  </div>
+  <div class="consent__actions">
+    <button class="btn btn--primary btn--sm" type="button" data-consent-accept>Akceptuję</button>
+    <button class="btn btn--ghost btn--sm" type="button" data-consent-reject>Tylko niezbędne</button>
+    <button class="linklike consent__more" type="button" data-consent-custom>Ustawienia</button>
+    <button class="btn btn--ghost btn--sm" type="button" data-consent-save hidden>Zapisz wybór</button>
+  </div>
+</div>
 
 <header class="site-header" data-header>
   <div class="site-header__inner wrap">
@@ -85,7 +104,7 @@
         <img class="hero__logo" src="assets/logo-padre-guilherme.svg" alt="Padre Guilherme" width="915" height="255" fetchpriority="high">
         <span class="visually-hidden"> - koncert w Atlas Arenie w Łodzi, 14 lutego 2027</span>
       </h1>
-      <p class="hero__claim script">Love is My Religion</p>
+      <p class="hero__claim script" lang="en">Love is My Religion</p>
     </div>
     <div class="hero__bottom">
       <p class="hero__date"><time datetime="2027-02-14">14.02.2027</time></p>
@@ -143,8 +162,8 @@
   <div class="wrap djmag__grid">
     <div class="djmag__copy">
       <p class="kicker reveal">DJ Mag Top 100 DJs 2026</p>
-      <h2 class="djmag__rank reveal" id="djmag-title"><span class="visually-hidden">Miejsce </span><span aria-hidden="true">#</span>79</h2>
-      <p class="djmag__badge reveal">New entry</p>
+      <h2 class="djmag__rank reveal" id="djmag-title"><span class="visually-hidden">Miejsce </span><span aria-hidden="true">#</span>79<span class="visually-hidden"> w rankingu DJ Mag Top 100 DJs 2026</span></h2>
+      <p class="djmag__badge reveal" lang="en">New entry</p>
       <p class="lead reveal">Debiut w jednym z najbardziej rozpoznawalnych rankingów światowej sceny DJ-skiej.</p>
       <p class="muted reveal">Zestawienie DJ Mag powstaje na podstawie głosowania fanów. <a href="https://djmag.com/top100djs/2026/79/padre-guilherme" target="_blank" rel="noopener" data-media="djmag">Profil w rankingu na djmag.com</a></p>
     </div>
@@ -159,7 +178,7 @@
   <div class="wrap bio__grid">
     <figure class="bio__photo reveal">
       <div class="frame" data-parallax-img>
-        <pg-img name="artysta" sizes="(min-width: 960px) 46vw, 100vw" alt="Padre Guilherme za konsoletą w niebieskim świetle sceny, z wyciągniętą ręką"></pg-img>
+        <pg-img name="artysta" sizes="(min-width: 1280px) 890px, (min-width: 960px) 70vw, 100vw" alt="Padre Guilherme za konsoletą w niebieskim świetle sceny, z wyciągniętą ręką"></pg-img>
       </div>
     </figure>
     <div class="bio__copy">
@@ -218,7 +237,7 @@
     </div>
   </div>
   <div class="rail" data-rail>
-    <ul class="rail__track posters__list wrap" data-rail-track>
+    <ul class="rail__track posters__list wrap" data-rail-track tabindex="0" aria-label="Plakaty wydarzeń">
       <!--pg:posters-->
     </ul>
     <div class="rail__nav wrap">
@@ -231,14 +250,14 @@
 <!-- LOVE IS MY RELIGION -->
 <section class="love" id="love" aria-labelledby="love-title">
   <div class="love__media" data-parallax="0.22" aria-hidden="true">
-    <pg-img name="love-scena" sizes="100vw" alt="" class="love__img"></pg-img>
+    <pg-img name="love-scena" mobile="love-scena-m" sizes="100vw" alt="" class="love__img"></pg-img>
   </div>
   <div class="love__shade" aria-hidden="true"></div>
   <div class="love__content wrap">
     <ul class="love__tags reveal" aria-label="W skrócie">
-      <li>Arena show</li><li>14.02.2027</li><li>Atlas Arena</li>
+      <li lang="en">Arena show</li><li>14.02.2027</li><li>Atlas Arena</li>
     </ul>
-    <h2 class="love__title script reveal" id="love-title">Love is My Religion</h2>
+    <h2 class="love__title script reveal" id="love-title" lang="en">Love is My Religion</h2>
     <p class="love__text reveal">14 lutego Atlas Arena w Łodzi wypełni się muzyką, światłem i emocjami. Padre Guilherme pokaże widowisko, w którym energia muzyki elektronicznej spotyka się z jego niezwykłą historią.</p>
     <div class="reveal"><a class="btn btn--primary btn--lg" href="#bilety" data-ticket="love">Kup bilet</a></div>
   </div>
@@ -260,7 +279,7 @@
       </figure>
     </div>
     <div class="support__copy">
-      <p class="kicker reveal">Official support</p>
+      <p class="kicker reveal" lang="en">Official support</p>
       <h2 class="h2 reveal" id="support-title">Skytech</h2>
       <p class="reveal">Polski DJ i producent, współtwórca globalnego hitu „Voodoo” nagranego z Martinem Garrixem i R3HAB-em. W 2025 roku znalazł się wśród 25 najlepszych producentów na świecie, a jego utwory grają m.in. David Guetta, Tiësto, Alok, Anyma i ARTBAT.</p>
       <p class="reveal">Występował na Tomorrowland i w Ushuaïa Ibiza. Jest autorem elektronicznej wersji „Pan jest pasterzem moim”, którą Padre Guilherme gra na swoich koncertach. 14 lutego zagra w Atlas Arenie przed setem Padre Guilherme.</p>
@@ -269,7 +288,7 @@
       </ul>
       <a class="video-card reveal" href="https://www.youtube.com/watch?v=3MtdT_WrJ6o" target="_blank" rel="noopener" data-media="skytech-youtube">
         <span class="video-card__thumb">
-          <pg-img name="skytech-youtube" sizes="(min-width: 960px) 420px, 90vw" alt=""></pg-img>
+          <pg-img name="skytech-youtube" sizes="(min-width: 720px) 220px, min(520px, 92vw)" alt=""></pg-img>
           <span class="play" aria-hidden="true"><!--pg:icon-play--></span>
         </span>
         <span class="video-card__meta">
@@ -390,7 +409,7 @@
 <!-- KOŃCOWE CTA -->
 <section class="final" id="kup" aria-labelledby="final-title" data-sticky-stop>
   <div class="final__media" aria-hidden="true">
-    <pg-img name="finale" sizes="100vw" alt="" class="final__img"></pg-img>
+    <pg-img name="finale" sizes="(min-width: 900px) and (orientation: landscape) 60vw, 100vw" alt="" class="final__img"></pg-img>
   </div>
     <div class="final__content wrap">
     <p class="kicker reveal"><time datetime="2027-02-14">14.02.2027</time> · Atlas Arena, Łódź</p>
@@ -427,37 +446,22 @@
   </div>
 </footer>
 
-<div class="sticky-cta" data-sticky-cta aria-hidden="true">
+<aside class="sticky-cta" aria-label="Szybki zakup biletu" data-sticky-cta aria-hidden="true">
   <div class="sticky-cta__info"><strong>14.02.2027</strong><span>Atlas Arena, Łódź</span></div>
   <a class="btn btn--primary" href="#bilety" data-ticket="sticky" tabindex="-1">Kup bilet</a>
-</div>
+</aside>
 
 <div class="lightbox" data-lightbox role="dialog" aria-modal="true" aria-label="Galeria zdjęć" hidden>
   <div class="lightbox__backdrop" data-lb-close></div>
   <figure class="lightbox__figure">
-    <picture class="lightbox__picture"><source type="image/avif" data-lb-source><img data-lb-img alt=""></picture>
-    <figcaption class="lightbox__caption"><span data-lb-caption></span> <span class="lightbox__count" data-lb-count></span></figcaption>
+    <picture class="lightbox__picture"><source type="image/avif" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-lb-source><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-lb-img alt=""></picture>
+    <figcaption class="lightbox__caption" aria-live="polite"><span data-lb-caption></span> <span class="lightbox__count" data-lb-count></span></figcaption>
   </figure>
   <button class="lightbox__btn lightbox__btn--close" type="button" data-lb-close aria-label="Zamknij galerię"><!--pg:icon-close--></button>
   <button class="lightbox__btn lightbox__btn--prev" type="button" data-lb-prev aria-label="Poprzednie zdjęcie"><!--pg:icon-left--></button>
   <button class="lightbox__btn lightbox__btn--next" type="button" data-lb-next aria-label="Następne zdjęcie"><!--pg:icon-right--></button>
 </div>
 
-<div class="consent" data-consent role="dialog" aria-labelledby="consent-title" aria-describedby="consent-desc" hidden>
-  <h2 class="consent__title" id="consent-title">Pliki cookies</h2>
-  <p id="consent-desc">Statystyki odwiedzin (Google Analytics) i narzędzia marketingowe (Meta Pixel) uruchamiamy tylko za Twoją zgodą. Szczegóły w <a href="https://www.live2listen.com/prywatnosc" data-privacy-link target="_blank" rel="noopener">polityce prywatności</a>.</p>
-  <div class="consent__opts" data-consent-opts hidden>
-    <label class="check"><input type="checkbox" checked disabled> <span>Niezbędne - zawsze aktywne</span></label>
-    <label class="check"><input type="checkbox" data-consent-analytics> <span>Analityczne (statystyki odwiedzin)</span></label>
-    <label class="check"><input type="checkbox" data-consent-marketing> <span>Marketingowe (remarketing i pomiar reklam)</span></label>
-  </div>
-  <div class="consent__actions">
-    <button class="btn btn--primary btn--sm" type="button" data-consent-accept>Akceptuję</button>
-    <button class="btn btn--ghost btn--sm" type="button" data-consent-reject>Tylko niezbędne</button>
-    <button class="linklike consent__more" type="button" data-consent-custom>Ustawienia</button>
-    <button class="btn btn--ghost btn--sm" type="button" data-consent-save hidden>Zapisz wybór</button>
-  </div>
-</div>
 
 </body>
 </html>
