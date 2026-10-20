@@ -1,0 +1,5 @@
+# Panel statystyk /bilety (PHP, chroniony hasłem).
+DirectoryIndex index.php
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+</IfModule>

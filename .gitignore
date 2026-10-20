@@ -4,3 +4,5 @@ dist-preview/
 *.log
 .DS_Store
 dist/
+server/_bilety/config.local.php
+server/_bilety/dane/

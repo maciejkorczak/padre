@@ -37,6 +37,20 @@ for (const f of [...files].sort()) {
   await copyFile(src, path.join(out, f));
   bytes += (await stat(src)).size;
 }
+// Krótki adres /bilety ze statystykami (PHP): skrypt przekierowania, biblioteka, panel /statystyki/.
+// Konfiguracja z hasłem panelu (server/_bilety/config.local.php) nie jest w repozytorium; trafia do paczki,
+// tylko gdy istnieje. Bez niej paczka nie nadpisze pliku _bilety/config.php już leżącego na serwerze.
+for (const [from, to] of [['server/bilety.php', 'bilety.php'], ['server/_bilety/lib.php', '_bilety/lib.php'], ['server/_bilety/.htaccess', '_bilety/.htaccess'],
+  ['server/statystyki/index.php', 'statystyki/index.php'], ['server/statystyki/.htaccess', 'statystyki/.htaccess']]) {
+  await mkdir(path.dirname(path.join(out, to)), { recursive: true });
+  await copyFile(path.join(root, from), path.join(out, to));
+  files.add(to);
+}
+try {
+  await copyFile(path.join(root, 'server/_bilety/config.local.php'), path.join(out, '_bilety/config.php'));
+  files.add('_bilety/config.php');
+} catch { console.log('UWAGA: brak server/_bilety/config.local.php - paczka bez _bilety/config.php (hasło panelu zostaje to z serwera).'); }
+
 // Ikona także w katalogu głównym: część aplikacji (iOS, podglądy linków) pyta o /apple-touch-icon.png bez czytania <link>.
 await copyFile(path.join(root, 'assets/apple-touch-icon.png'), path.join(out, 'apple-touch-icon.png'));
 files.add('apple-touch-icon.png');

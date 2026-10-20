@@ -13,7 +13,8 @@
     "test": "node scripts/test-site.mjs",
     "preview": "node scripts/build-preview.mjs",
     "pdf": "node scripts/export-pdf.mjs",
-    "dist": "node scripts/build-dist.mjs"
+    "dist": "node scripts/build-dist.mjs",
+    "test:bilety": "node scripts/test-bilety.mjs"
   },
   "devDependencies": {
     "pdf-lib": "1.17.1",

@@ -4,12 +4,18 @@
 # Reguły działają tylko dla padreguilherme.pl, więc na adresie testowym nic nie przekierowują.
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  # Krótki adres dla kampanii (Marek, 20.10.2026): /bilety -> sprzedaż biletów z linkiem partnera L2L
-  # i utm_source=direct. Przed regułami https/www, więc z każdego wariantu adresu to jeden krok.
+  # Krótki adres dla kampanii (Marek, 20.10.2026): /bilety -> sprzedaż biletów z linkiem partnera L2L.
+  # Przed regułami https/www, więc z każdego wariantu adresu to jeden krok.
+  # 1) Normalnie: bilety.php przekierowuje (302) z partner=l2lsp, utm_* z linku (utm_source=direct, gdy brak),
+  #    fbclid/gclid, i zapisuje wejście do statystyk (/statystyki/, bez IP i bez ciasteczek).
+  RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
+  RewriteCond %{DOCUMENT_ROOT}/bilety.php -f [OR]
+  RewriteCond %{CONTEXT_DOCUMENT_ROOT}/bilety.php -f
+  RewriteRule ^bilety/?$ /bilety.php [NC,END]
+  # 2) Awaryjnie (gdy nie ma bilety.php): przekierowanie bez statystyk.
   # Adres eBilet bez „/” przed „?”: wersja z ukośnikiem przekierowuje w eBilet i gubi utm_source.
   # 302 (tymczasowe): przeglądarki nie zapamiętują celu na stałe. NE: „#” zostaje „#”.
-  # Identyfikator kliknięcia reklamy (fbclid z Meta, gclid z Google) przechodzi dalej do eBilet,
-  # żeby piksel eBilet mógł przypisać zakup do reklamy. Inne parametry nie są przenoszone.
+  # Identyfikator kliknięcia reklamy (fbclid z Meta, gclid z Google) przechodzi dalej do eBilet.
   RewriteCond %{HTTP_HOST} ^(www\.)?padreguilherme\.pl$ [NC]
   RewriteCond %{QUERY_STRING} (?:^|&)(fbclid|gclid)=([A-Za-z0-9._-]+) [NC]
   RewriteRule ^bilety/?$ "https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp&utm_source=direct&%1=%2#padre-guilherme_155685,1622" [NC,NE,R=302,L]
