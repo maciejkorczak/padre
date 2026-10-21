@@ -143,12 +143,16 @@ try {
 
   /* ---------- Panel ---------- */
   const session = (localAddress, srvPort = port) => {
-    const s = { cookie: '', html: '' };
+    const s = { jar: {}, html: '' };
     s.req = (method = 'GET', body = null, q = '') => new Promise((resolve, reject) => {
       const data = body ? new URLSearchParams(body).toString() : '';
-      const rq = http.request({ host: '127.0.0.1', port: srvPort, path: '/statystyki/' + q, method, localAddress, headers: { Cookie: s.cookie, ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) } : {}) } }, (res) => {
+      const rq = http.request({ host: '127.0.0.1', port: srvPort, path: '/statystyki/' + q, method, localAddress, headers: { Cookie: Object.entries(s.jar).map(([k, v]) => `${k}=${v}`).join('; '), ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(data) } : {}) } }, (res) => {
         const chunks = []; res.on('data', (d) => chunks.push(d)); res.on('end', () => {
-          const sc = res.headers['set-cookie']; if (sc) s.cookie = sc[0].split(';')[0];
+          for (const c of res.headers['set-cookie'] || []) { // prosty słoik: usunięte ciasteczko = pusta wartość albo data w przeszłości
+            const [kv] = c.split(';'); const i = kv.indexOf('='); const k = kv.slice(0, i), v = kv.slice(i + 1);
+            if (v === '' || v === 'deleted' || /max-age=0|expires=[^;]*1970/i.test(c)) delete s.jar[k]; else s.jar[k] = v;
+          }
+          s.lastSetCookie = res.headers['set-cookie'] || [];
           const buf = Buffer.concat(chunks); s.html = buf.toString('utf8');
           const t = s.html.match(/name="csrf" value="([^"]+)"/); if (t) s.token = t[1]; // 303 po akcji nie ma treści
           resolve({ status: res.statusCode, headers: res.headers, buf, text: s.html });
@@ -164,12 +168,15 @@ try {
   let r = await A.req();
   check('Panel: bez logowania pokazuje tylko formularz', r.status === 200 && /name="haslo"/.test(r.text) && !/Wejścia dziennie/.test(r.text));
   check('Panel: nagłówki noindex, bez skryptów, bez osadzania w ramce', /noindex/.test(r.headers['x-robots-tag'] || '') && /script-src 'none'/.test(r.headers['content-security-policy'] || '') && /frame-ancestors 'none'/.test(r.headers['content-security-policy'] || ''));
-  const sc0 = (r.headers['set-cookie'] || [])[0] || '';
-  check('Panel: ciasteczko sesji tylko dla /statystyki/, HttpOnly, SameSite=Strict', /path=\/statystyki\//i.test(sc0) && /httponly/i.test(sc0) && /samesite=strict/i.test(sc0), sc0);
+  check('Panel: strona logowania nie ustawia ciasteczek', !(r.headers['set-cookie'] || []).length);
   r = await A.req('POST', { a: 'login', csrf: A.csrf(), haslo: 'zle' });
   check('Panel: złe hasło odrzucone', /Nieprawidłowe hasło/.test(r.text));
   r = await A.req('POST', { a: 'login', csrf: A.csrf(), haslo: PASSWORD });
+  const sc0 = (r.headers['set-cookie'] || []).find((x) => x.startsWith('pg_auth=')) || '';
   check('Panel: poprawne hasło loguje', r.status === 303);
+  check('Panel: ciasteczko logowania podpisane, tylko dla /statystyki/, HttpOnly, SameSite=Strict, bez plików sesji', /^pg_auth=\d{9,11}\.[0-9a-f]{16}\.[0-9a-f]{64};/.test(sc0) && /path=\/statystyki\//i.test(sc0) && /httponly/i.test(sc0) && /samesite=strict/i.test(sc0) && !existsSync(path.join(DANE, 'sesje')), sc0);
+  const forged = session('127.0.0.1'); forged.jar.pg_auth = sc0.slice(8, sc0.indexOf(';')).replace(/.$/, (ch) => (ch === 'a' ? 'b' : 'a'));
+  check('Panel: podrobione ciasteczko nie loguje', /name="haslo"/.test((await forged.req()).text));
   r = await A.req();
   check('Panel: zestawienia i wykres', /Wejścia dziennie/.test(r.text) && /<svg class="chart"/.test(r.text) && /Źródło \(utm_source\)/.test(r.text) && /Kampania \(utm_campaign\)/.test(r.text) && /Treść \/ kreacja \(utm_content\)/.test(r.text));
   check('Panel: liczba wejść bez robotów, podglądów, HEAD i POST', new RegExp(`tile hero"><p class="k">[^<]*</p><p class="v">${human}</p>`).test(r.text) && /roboty 1, podglądy linków 3/.test(r.text), (r.text.match(/tile hero.*?<p class="v">(\d+)/) || [])[1]);

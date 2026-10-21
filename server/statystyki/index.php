@@ -10,40 +10,49 @@ header('Cache-Control: no-store, private');
 header('X-Robots-Tag: noindex, nofollow, noarchive');
 header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'; img-src 'self' data:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
 
-/* ---------- Sesja: własny katalog, tryb ścisły, dane panelu w osobnym kluczu ---------- */
+/* ---------- Logowanie bez plików sesji: podpisane ciasteczko ---------- */
+// Na hostingu z dyskiem współdzielonym (home.pl) zapis pliku sesji PHP bywa niewidoczny dla kolejnego
+// zapytania (po zalogowaniu panel czasem znów pokazywał logowanie). Ciasteczko „czas.losowe.podpis”
+// (HMAC kluczem pochodnym od hasha hasła) nie wymaga niczego zapisywać na serwerze. Zmiana hasła zmienia
+// klucz, więc unieważnia ciasteczka na innych urządzeniach. Ważne 8 godzin, tylko dla /statystyki/.
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
 pg_ensure_dir();
-$sessDir = pg_dane() . '/sesje';
-if (!is_dir($sessDir)) @mkdir($sessDir, 0700, true);
-if (is_dir($sessDir) && is_writable($sessDir)) session_save_path($sessDir);
-ini_set('session.use_strict_mode', '1');
-ini_set('session.gc_maxlifetime', '28800');
-ini_set('session.gc_probability', '1');
-ini_set('session.gc_divisor', '50');
-if (PHP_VERSION_ID >= 70300) {
-  session_set_cookie_params(['lifetime' => 0, 'path' => '/statystyki/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Strict']);
-} else {
-  session_set_cookie_params(0, '/statystyki/; samesite=Strict', '', $https, true);
-}
-session_name('pg_panel');
-session_start();
-if (!isset($_SESSION['pg']) || !is_array($_SESSION['pg'])) $_SESSION['pg'] = [];
-if (empty($_SESSION['pg']['csrf'])) $_SESSION['pg']['csrf'] = bin2hex(random_bytes(16));
 
 function h($s) { return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function nf($n) { return number_format((float) $n, 0, ',', "\u{00A0}"); }
 function pct($a, $b) { return $b > 0 ? number_format(100 * $a / $b, 1, ',', '') . '%' : '0%'; }
-function csrf_ok() { return isset($_POST['csrf']) && is_string($_POST['csrf']) && hash_equals($_SESSION['pg']['csrf'], $_POST['csrf']); }
-function csrf_field() { return '<input type="hidden" name="csrf" value="' . h($_SESSION['pg']['csrf']) . '">'; }
-function back($msg = '', $err = '') { $_SESSION['pg']['flash'] = [$msg, $err]; header('Location: ./' . (isset($_POST['q']) && is_string($_POST['q']) && preg_match('/^\?[A-Za-z0-9_=&%.+\-]*$/', $_POST['q']) ? $_POST['q'] : ''), true, 303); exit; }
-// „Pokolenie” hasła: zmiana hasła unieważnia wszystkie inne zalogowane sesje.
-function pg_gen($hash) { return substr(hash('sha256', 'pg-panel|' . $hash), 0, 16); }
+function pg_cookie_key($hash) { return hash_hmac('sha256', 'pg-panel-cookie|' . PG_DIR, $hash); }
+function pg_set_cookie($name, $value, $ttl = 0) {
+  global $https;
+  $exp = $value === '' ? time() - 3600 : ($ttl ? time() + $ttl : 0);
+  if (PHP_VERSION_ID >= 70300) setcookie($name, $value, ['expires' => $exp, 'path' => '/statystyki/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Strict']);
+  else setcookie($name, $value, $exp, '/statystyki/; samesite=Strict', '', $https, true);
+}
+function pg_auth_new($hash) { $v = time() . '.' . bin2hex(random_bytes(8)); return $v . '.' . hash_hmac('sha256', $v, pg_cookie_key($hash)); }
+function pg_auth_ok($cookie, $hash) {
+  if ($hash === '' || !is_string($cookie) || !preg_match('/^(\d{9,11})\.([0-9a-f]{16})\.([0-9a-f]{64})$/', $cookie, $m)) return false;
+  $t = (int) $m[1];
+  if ($t > time() + 300 || time() - $t >= 8 * 3600) return false;
+  return hash_equals(hash_hmac('sha256', $m[1] . '.' . $m[2], pg_cookie_key($hash)), $m[3]);
+}
+// Token CSRF wynika z ciasteczka logowania (podpis HMAC), więc strona innego serwisu nie może go znać.
+function pg_csrf() { global $auth, $c; return $auth !== '' ? substr(hash_hmac('sha256', 'csrf|' . $auth, pg_cookie_key($c['panel_hash'])), 0, 32) : ''; }
+function csrf_ok() { $t = pg_csrf(); return $t !== '' && isset($_POST['csrf']) && is_string($_POST['csrf']) && hash_equals($t, $_POST['csrf']); }
+function csrf_field() { return '<input type="hidden" name="csrf" value="' . h(pg_csrf()) . '">'; }
+// Komunikat po akcji: krótkie ciasteczko odczytywane przy następnym wyświetleniu panelu.
+function back($msg = '', $err = '') {
+  if ($msg !== '' || $err !== '') pg_set_cookie('pg_flash', rtrim(strtr(base64_encode(json_encode([(string) $msg, (string) $err], JSON_UNESCAPED_UNICODE)), '+/', '-_'), '='), 120);
+  header('Location: ./' . (isset($_POST['q']) && is_string($_POST['q']) && preg_match('/^\?[A-Za-z0-9_=&%.+\-]*$/', $_POST['q']) ? $_POST['q'] : ''), true, 303);
+  exit;
+}
 
 $c = pg_config();
-$S = $_SESSION['pg'];
-$logged = $c['panel_hash'] !== '' && !empty($S['t']) && time() - (int) $S['t'] < 8 * 3600 && isset($S['g']) && hash_equals(pg_gen($c['panel_hash']), (string) $S['g']);
+$auth = isset($_COOKIE['pg_auth']) && is_string($_COOKIE['pg_auth']) ? $_COOKIE['pg_auth'] : '';
+$logged = pg_auth_ok($auth, $c['panel_hash']);
+if (!$logged) $auth = '';
 $post = $_SERVER['REQUEST_METHOD'] === 'POST';
 $act = $post && isset($_POST['a']) && is_string($_POST['a']) ? $_POST['a'] : '';
+if (isset($_COOKIE['pg_panel'])) pg_set_cookie('pg_panel', ''); // ciasteczko starej wersji (sesja PHP)
 
 /* ---------- Logowanie: 5 nieudanych prób z jednego adresu = 15 minut przerwy (łącznie najwyżej 50) ---------- */
 // Adres IP tylko jako skrót HMAC z kluczem panelu, wyłącznie do ograniczania logowań: do 15 minut
@@ -71,19 +80,15 @@ if (!$logged && $act === 'login') {
   $key = pg_login_key();
   // Sprawdzenie limitu i zapis próby w jednym kroku pod blokadą (równoległe próby nie omijają limitu).
   $blocked = false; $now = time();
-  if (csrf_ok()) {
-    pg_update_state('logowania.php', function ($s) use ($key, $now, &$blocked) {
-      $s = pg_login_prune($s);
-      if ((isset($s['k'][$key]) && count($s['k'][$key]) >= 5) || count($s['all']) >= 50) { $blocked = true; return $s; }
-      $s['k'][$key][] = $now; $s['all'][] = $now;
-      return $s;
-    });
-  }
-  if (!csrf_ok()) $err = 'Sesja wygasła. Spróbuj ponownie.';
-  elseif ($blocked) $err = 'Za dużo nieudanych prób. Spróbuj ponownie za 15 minut.';
+  pg_update_state('logowania.php', function ($s) use ($key, $now, &$blocked) {
+    $s = pg_login_prune($s);
+    if ((isset($s['k'][$key]) && count($s['k'][$key]) >= 5) || count($s['all']) >= 50) { $blocked = true; return $s; }
+    $s['k'][$key][] = $now; $s['all'][] = $now;
+    return $s;
+  });
+  if ($blocked) $err = 'Za dużo nieudanych prób. Spróbuj ponownie za 15 minut.';
   elseif ($c['panel_hash'] !== '' && isset($_POST['haslo']) && is_string($_POST['haslo']) && password_verify($_POST['haslo'], $c['panel_hash'])) {
-    session_regenerate_id(true);
-    $_SESSION['pg'] = ['t' => time(), 'g' => pg_gen($c['panel_hash']), 'csrf' => bin2hex(random_bytes(16))];
+    pg_set_cookie('pg_auth', pg_auth_new($c['panel_hash']));
     // Udane logowanie: zdejmujemy próby z tego adresu, a z łącznego licznika tę przed chwilą zapisaną
     // (łączny limit liczy tylko nieudane próby).
     pg_update_state('logowania.php', function ($s) use ($key, $now) {
@@ -184,7 +189,7 @@ if (!$logged) {
 /* ---------- Akcje (POST) ---------- */
 if ($post) {
   if (!csrf_ok()) back('', 'Sesja wygasła. Spróbuj ponownie.');
-  if ($act === 'wyloguj') { $_SESSION = []; session_destroy(); header('Location: ./', true, 303); exit; }
+  if ($act === 'wyloguj') { pg_set_cookie('pg_auth', ''); header('Location: ./', true, 303); exit; }
   $save = function ($k, $v) { $r = pg_update_state('ustawienia.php', function ($u) use ($k, $v) { $u[$k] = $v; return $u; }); return $r !== null; };
   if ($act === 'ga4_zapisz') {
     $s = isset($_POST['secret']) && is_string($_POST['secret']) ? trim($_POST['secret']) : '';
@@ -222,8 +227,7 @@ if ($post) {
     if ($new !== $rep) back('', 'Nowe hasła się różnią.');
     $hash = password_hash($new, PASSWORD_DEFAULT);
     if (!$save('panel_hash', $hash)) back('', 'Nie udało się zapisać hasła.');
-    session_regenerate_id(true);
-    $_SESSION['pg']['g'] = pg_gen($hash); // inne sesje (stare hasło) zostają wylogowane
+    pg_set_cookie('pg_auth', pg_auth_new($hash)); // nowy klucz: inne urządzenia (stare ciasteczka) wylogowane
     back('Hasło zmienione. Inne zalogowane urządzenia zostały wylogowane.');
   }
   back();
@@ -404,7 +408,12 @@ function dim_table($title, $data, $total, $filterKey = '', $limit = 12, $links =
 }
 
 /* ---------- Strona ---------- */
-$flash = isset($_SESSION['pg']['flash']) ? $_SESSION['pg']['flash'] : null; unset($_SESSION['pg']['flash']);
+$flash = null;
+if (isset($_COOKIE['pg_flash']) && is_string($_COOKIE['pg_flash']) && strlen($_COOKIE['pg_flash']) < 2000) {
+  $f = json_decode((string) base64_decode(strtr($_COOKIE['pg_flash'], '-_', '+/')), true);
+  if (is_array($f) && count($f) === 2 && is_string($f[0]) && is_string($f[1])) $flash = [pg_cut($f[0], 400), pg_cut($f[1], 400)];
+  pg_set_cookie('pg_flash', '');
+}
 $ga = pg_read_state('ga4-stan.php');
 echo page_head('Statystyki /bilety');
 echo '<div class="wrap">';
