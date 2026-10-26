@@ -1,0 +1,45 @@
+INSTRUKCJA SPRAWDZENIA PIKSELA META - padreguilherme.pl (26.10.2026)
+
+Przygotowanie (jednorazowo):
+1. Komputer z Google Chrome albo Microsoft Edge. Nie Safari, Firefox, Brave ani przeglądarka wbudowana w aplikację Facebook/Instagram.
+2. Zainstaluj albo zaktualizuj rozszerzenie "Doradca Meta ds. danych reklam" (Meta Ads Data Advisor, dawniej Meta Pixel Helper) z Chrome Web Store i przypnij jego ikonę obok paska adresu.
+3. Wyłącz bloker reklam i rozszerzenia prywatności (uBlock, AdBlock, Ghostery itp.) albo użyj czystego profilu Chrome z samym Doradcą. Firmowy VPN lub filtr DNS też może blokować Facebooka.
+
+A. Strona koncertu (ok. 1 minuty)
+1. Otwórz okno incognito (Ctrl+Shift+N). Rozszerzenie musi mieć włączone "Zezwalaj w trybie incognito" (chrome://extensions - Doradca - Szczegóły). Zamiast incognito możesz usunąć dane witryny: ikona obok adresu padreguilherme.pl - Pliki cookie i dane witryn - Usuń.
+2. Wejdź na https://padreguilherme.pl/. Pojawi się baner cookies. Na tym etapie Doradca pokaże "Nie znaleziono pikseli na tej stronie" i to jest prawidłowe, bo przed zgodą piksel nie działa.
+3. Kliknij "AKCEPTUJĘ" (albo "Ustawienia" - zaznacz zgodę marketingową - zapisz).
+4. Kliknij ikonę Doradcy. Powinno być: "Na tej stronie znaleziono piksel", "Identyfikator: 1732539551141809", status aktywny, zdarzenie PageView. Jeśli lista jest pusta, odśwież stronę (F5) i kliknij ikonę ponownie.
+5. Przewiń do sekcji z biletami, a dojdzie ViewContent. Kliknięcie "Kup bilet" wyśle ClickBuyTicket i przeniesie do eBilet.
+6. Jeśli na tym komputerze kliknięto kiedyś "TYLKO NIEZBĘDNE", strona pamięta to przez 12 miesięcy i baner się nie pokaże. Wtedy kliknij w stopce "Ustawienia cookies", zaznacz zgodę marketingową i zapisz, albo usuń dane witryny (punkt 1).
+7. Kontrola awaryjna bez wtyczki: F12 - zakładka Network (Sieć) - wpisz w filtr "facebook". Po zgodzie widać fbevents.js, signals/config/1732539551141809 i facebook.com/tr/?id=1732539551141809&ev=PageView.
+
+B. Ścieżka z reklamy: /bilety i eBilet (ok. 1 minuty)
+1. W nowym oknie incognito otwórz https://padreguilherme.pl/bilety?utm_source=test&utm_medium=test&utm_campaign=test_piksel
+2. Strona od razu przenosi do eBilet. Sprawdź, czy adres w pasku zawiera partner=l2lsp, Twoje utm_* i kończy się na #padre-guilherme_155685,1622.
+3. Przed zgodą Doradca pokaże "Nie znaleziono pikseli na tej stronie". To jest prawidłowe, bo eBilet też uruchamia piksele dopiero po zgodzie.
+4. Kliknij "OK, zgadzam się" w banerze cookies eBilet.
+5. Kliknij ikonę Doradcy. Powinny być 2 piksele: 196040017456060 (piksel eBilet) i 1732539551141809 (piksel organizatora), każdy z PageView i ViewContent.
+6. Jeśli widać tylko 196040017456060, adres nie ma końcówki #padre-guilherme_155685,1622. Bez niej eBilet nie uruchamia piksela organizatora.
+7. Nie przechodź do koszyka ani płatności w ramach testu. Wejścia testowe zobaczysz w statystykach /bilety jako utm_source=test.
+
+C. Menedżer zdarzeń Meta (pewniejsze, widać też zdarzenia z serwera)
+1. Menedżer zdarzeń - Źródła danych - zestaw danych (piksel) 1732539551141809. Jeśli go nie widać, właściciel piksela musi udostępnić go portfolio biznesowemu agencji i przypisać do konta reklamowego kampanii.
+2. Karta "Testowanie zdarzeń" - zdarzenia z przeglądarki - wpisz https://padreguilherme.pl/ - "Otwórz witrynę". W otwartej karcie kliknij "AKCEPTUJĘ". Po kilku sekundach pojawi się PageView, a po przewinięciu do biletów ViewContent.
+3. Karta "Przegląd": zdarzenia z ostatnich dni z podziałem na domeny. Powinny być padreguilherme.pl i ebilet.pl. Sprawdź, czy jest Purchase z ebilet.pl, z wartością i walutą PLN. Nowe zdarzenia mogą pojawić się z opóźnieniem do ok. 20 minut.
+4. Jeśli Purchase nie ma, daj znać. Trzeba to wyjaśnić z eBilet, bo zakupy mogą trafiać do drugiego piksela przypisanego do L2L (4318311398454532).
+5. Ustawienia zestawu danych - uprawnienia dotyczące ruchu: jeśli jest lista dozwolonych domen, muszą na niej być padreguilherme.pl i ebilet.pl.
+
+D. Ustawienia kampanii pod konwersje na kreację
+1. W każdej reklamie: Śledzenie - Zdarzenia w witrynie - zaznaczony zestaw danych 1732539551141809. Cel kampanii Sprzedaż, zdarzenie konwersji Zakup (po potwierdzeniu z punktu C3, że Purchase dochodzi).
+2. Jedna kreacja = jedna reklama, żeby wyniki dało się porównać kreacja po kreacji.
+3. Adres witryny: https://padreguilherme.pl/bilety. W polu "Parametry adresu URL": utm_source=meta&utm_medium=paid&utm_campaign=padre_lodz&utm_term={{adset.id}}&utm_content={{ad.id}} (propozycja, do uzgodnienia z agencją UTM).
+4. Nie usuwać fbclid. /bilety przekazuje dalej tylko parametry utm_* i identyfikatory kliknięć (fbclid, gclid). Inne parametry, np. ad_id=, przepadają.
+5. Wyniki czytaj w Menedżerze reklam na poziomie reklam: Zakupy, Koszt na zakup, Wartość konwersji. Meta przypisuje zakup do reklamy na podstawie kliknięcia, a nie UTM. Konwersji będzie mniej niż faktycznej sprzedaży, bo eBilet liczy tylko osoby, które zgodziły się na cookies.
+
+E. Jeśli nadal "brak piksela", prześlijcie nam:
+- otwierany adres;
+- przeglądarkę;
+- czy i którą zgodę kliknięto;
+- czy działał bloker reklam;
+- zrzut z F12 - Network z filtrem "facebook" zrobiony po kliknięciu zgody.
