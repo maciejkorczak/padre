@@ -32,6 +32,17 @@
     } catch (e) { /* brak URLSearchParams */ }
     return found;
   })();
+  // Identyfikatory kliknięcia reklamy (fbclid z Meta, gclid z Google...): tylko do linków „Kup bilet”, jak w /bilety.
+  // Dzięki nim eBilet (po zgodzie w swoim banerze) przypisze zakup do reklamy. Nie trafiają do zdarzeń pomiaru.
+  var CLICK_KEYS = ['fbclid', 'gclid', 'gbraid', 'wbraid', 'ttclid', 'msclkid'];
+  var clickIds = (function () {
+    var found = {};
+    try {
+      var qs = new URLSearchParams(location.search);
+      CLICK_KEYS.forEach(function (k) { var v = qs.get(k); if (v && /^[A-Za-z0-9._-]{1,1000}$/.test(v)) found[k] = v; });
+    } catch (e) { /* brak URLSearchParams */ }
+    return found;
+  })();
 
   /* ---------- Pomiar ---------- */
   window.dataLayer = window.dataLayer || [];
@@ -124,15 +135,22 @@
     var btnSave = $('[data-consent-save]', box);
     var btnCustom = $('[data-consent-custom]', box);
     var opener = null;
-    // Miejsce pod banerem: element z fokusem nie chowa się za nim (scroll-padding) i da się dojść do końca strony.
-    function reserve(on) {
-      var h = on ? (box.offsetHeight + 24) + 'px' : '';
-      root.style.scrollPaddingBottom = h; doc.body.style.paddingBottom = h;
+    // Okno modalne: strona za nim jest nieaktywna, fokus zostaje w oknie. Bez showModal (stare przeglądarki)
+    // okno pokazuje się jak zwykły baner na dole ekranu.
+    function show() {
+      if (!box.hasAttribute('open')) {
+        try { box.showModal(); root.classList.add('consent-open'); } catch (e) { box.setAttribute('open', ''); }
+      }
+      updateSticky();
+    }
+    function hide() {
+      if (box.hasAttribute('open')) { try { box.close(); } catch (e) { box.removeAttribute('open'); } }
+      root.classList.remove('consent-open'); updateSticky();
     }
     function save(c) {
       c.v = CONSENT_V; c.ts = Date.now();
       store.set('pg_consent', c);
-      box.hidden = true; reserve(false); updateSticky();
+      hide();
       if (withdraw(c)) { location.reload(); return; }
       applyConsent(c);
       var back = opener && opener.isConnected ? opener : doc.getElementById('tresc');
@@ -143,8 +161,7 @@
       var saved = readConsent() || {};
       cbA.checked = !!saved.analytics; cbM.checked = !!saved.marketing;
       opts.hidden = !custom; btnSave.hidden = !custom; btnCustom.hidden = !!custom;
-      box.hidden = false;
-      reserve(true); updateSticky();
+      show();
     }
     $('[data-consent-accept]', box).addEventListener('click', function () { save({ analytics: true, marketing: true }); });
     $('[data-consent-reject]', box).addEventListener('click', function () { save({ analytics: false, marketing: false }); });
@@ -152,25 +169,27 @@
     btnSave.addEventListener('click', function () { save({ analytics: cbA.checked, marketing: cbM.checked }); });
     var reopen = $('[data-consent-open]');
     if (reopen) { reopen.hidden = false; reopen.addEventListener('click', function () { opener = reopen; open(true); cbA.focus(); }); }
-    window.addEventListener('resize', function () { if (!box.hidden) reserve(true); });
-    box.addEventListener('keydown', function (e) {
-      if (!opener) return;
-      if (e.key === 'Escape') { e.preventDefault(); box.hidden = true; reserve(false); updateSticky(); var o = opener; opener = null; o.focus(); return; }
-      if (e.key !== 'Tab') return;
-      var f = $$('input:not([disabled]), button, a[href]', box).filter(function (el) { return el.offsetParent !== null; });
-      if ((!e.shiftKey && doc.activeElement === f[f.length - 1]) || (e.shiftKey && doc.activeElement === f[0])) { e.preventDefault(); opener.focus(); }
+    // Escape (i gest „wstecz” na Androidzie): przy pierwszej wizycie okno zostaje, bo czeka na wybór;
+    // otwarte ze stopki („Ustawienia cookies”) zamyka się bez zmian. Gdyby przeglądarka i tak je zamknęła,
+    // nic nie jest zapisywane: brak zgody, okno wróci przy następnej wizycie.
+    box.addEventListener('cancel', function (e) { if (!opener) e.preventDefault(); });
+    box.addEventListener('close', function () {
+      root.classList.remove('consent-open'); updateSticky();
+      if (opener) { var o = opener; opener = null; o.focus(); }
     });
     var saved = readConsent();
-    if (saved) applyConsent(saved); else open(false);
+    if (saved) applyConsent(saved);
+    else { open(false); var t = $('#consent-title', box); if (t) t.focus({ preventScroll: true }); }
   }
 
   /* ---------- Bilety ---------- */
   function ticketHref() {
     if (!cfg.ticketUrl) return '';
-    if (!cfg.passUtmToTicketUrl || !Object.keys(campaign).length) return cfg.ticketUrl;
+    if (!cfg.passUtmToTicketUrl || !(Object.keys(campaign).length || Object.keys(clickIds).length)) return cfg.ticketUrl;
     try {
       var u = new URL(cfg.ticketUrl);
       UTM_KEYS.forEach(function (k) { if (campaign[k] && k.indexOf('utm_') === 0 && !u.searchParams.has(k)) u.searchParams.set(k, campaign[k]); });
+      CLICK_KEYS.forEach(function (k) { if (clickIds[k] && !u.searchParams.has(k)) u.searchParams.set(k, clickIds[k]); });
       return u.toString();
     } catch (e) { return cfg.ticketUrl; }
   }
@@ -575,7 +594,7 @@
     if (!sticky) return;
     var consentBox = $('[data-consent]');
     var show = mqMobile.matches && !stickyState.heroVisible && !stickyState.stopVisible && !stickyState.typing &&
-      !root.classList.contains('nav-open') && !root.classList.contains('lb-open') && !(consentBox && !consentBox.hidden);
+      !root.classList.contains('nav-open') && !root.classList.contains('lb-open') && !(consentBox && consentBox.hasAttribute('open'));
     sticky.classList.toggle('is-visible', show);
     root.classList.toggle('has-sticky', show);
     sticky.setAttribute('aria-hidden', String(!show));

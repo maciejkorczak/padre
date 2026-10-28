@@ -387,10 +387,35 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   const fut = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true, init: () => { try { localStorage.setItem('pg_consent', JSON.stringify({ analytics: true, marketing: true, v: 1, ts: Date.now() + 10 * 365 * 864e5 })); } catch (e) {} } });
   check('Zgoda: zapis z datą z przyszłości jest nieważny (baner, brak trackerów)', await fut.page.locator('[data-consent]').isVisible() && fut.trackerHits.length === 0);
   await fut.ctx.close();
-  const dsk = await open({ width: 1366, height: 768 }, { freshConsent: true });
-  const cover = await dsk.page.evaluate(() => { const b = document.querySelector('.hero__cta .btn').getBoundingClientRect(); return document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2).closest('[data-consent]') !== null; });
-  check('Komputer: baner cookies nie zasłania „Kup bilet” w hero', !cover);
-  await dsk.ctx.close();
+  // Okno zgody: nie da się go przeoczyć (modalne, strona przyciemniona i nieaktywna do wyboru),
+  // a „Akceptuję” i „Tylko niezbędne” są tak samo duże i widoczne bez przewijania (RODO, art. 399 PKE).
+  for (const [vw, vh, label] of [[320, 568, 'mały telefon'], [390, 664, 'Instagram na iPhonie'], [1366, 768, 'komputer']]) {
+    const d = await open({ width: vw, height: vh }, { mobile: vw < 768, freshConsent: true });
+    const m = await d.page.evaluate(() => {
+      const box = document.querySelector('[data-consent]'), r = box.getBoundingClientRect();
+      const a = document.querySelector('[data-consent-accept]').getBoundingClientRect(), j = document.querySelector('[data-consent-reject]').getBoundingClientRect();
+      return { modal: box.matches(':modal'), focusIn: box.contains(document.activeElement), fits: r.top >= -1 && r.bottom <= innerHeight + 1, btnsVisible: a.bottom <= innerHeight && j.bottom <= innerHeight, same: Math.abs(a.width - j.width) < 1 && Math.abs(a.height - j.height) < 1 && a.height >= 44, locked: getComputedStyle(document.documentElement).overflow === 'hidden' };
+    });
+    const blocked = await d.page.locator('.hero__cta .btn').first().click({ trial: true, timeout: 800 }).then(() => false, () => true);
+    check(`Zgoda (${label}): okno modalne, strona zablokowana do wyboru, fokus w oknie`, m.modal && m.focusIn && m.locked && blocked, JSON.stringify(m));
+    check(`Zgoda (${label}): „Akceptuję” i „Tylko niezbędne” tej samej wielkości, widoczne bez przewijania`, m.fits && m.btnsVisible && m.same, JSON.stringify(m));
+    if (vw === 390) {
+      await d.page.keyboard.press('Escape'); await d.page.waitForTimeout(150);
+      check('Zgoda: Escape przy pierwszej wizycie nie zamyka okna (czeka na wybór)', await d.page.locator('[data-consent]').isVisible());
+      await d.page.click('[data-consent-reject]'); await d.page.waitForTimeout(300);
+      const after = await d.page.evaluate(() => ({ open: document.querySelector('[data-consent]').open, locked: getComputedStyle(document.documentElement).overflow === 'hidden' }));
+      const free = await d.page.locator('.hero__cta .btn').first().click({ trial: true, timeout: 1500 }).then(() => true, () => false);
+      check('Zgoda: po wyborze okno znika, strona przewija się, „Kup bilet” klikalny', !after.open && !after.locked && free, JSON.stringify(after));
+      await d.page.click('[data-consent-open]'); await d.page.waitForTimeout(200);
+      await d.page.keyboard.press('Escape'); await d.page.waitForTimeout(200);
+      check('Zgoda: okno otwarte ze stopki zamyka Escape, fokus wraca do „Ustawienia cookies”', !(await d.page.locator('[data-consent]').isVisible()) && await d.page.evaluate(() => document.activeElement.hasAttribute('data-consent-open')));
+    }
+    await d.ctx.close();
+  }
+  const fb = await open({ width: 390, height: 844 }, { mobile: true, query: 'index.html?utm_source=facebook.com&utm_medium=cpc&utm_content=reel_01&fbclid=IwAR_test-123' });
+  const fbHref = await fb.page.getAttribute('[data-ticket="hero"]', 'href');
+  check('Kup bilet: link przekazuje do eBilet utm_* i identyfikator kliknięcia reklamy (fbclid), z końcówką organizatora', /[?&]partner=l2lsp(&|$)/.test(fbHref) && fbHref.includes('utm_content=reel_01') && fbHref.includes('fbclid=IwAR_test-123') && fbHref.endsWith('#padre-guilherme_155685,1622'), fbHref);
+  await fb.ctx.close();
   const c2 = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
   await c2.page.click('[data-consent-reject]'); await c2.page.waitForTimeout(300);
   await c2.page.reload({ waitUntil: 'networkidle' });
