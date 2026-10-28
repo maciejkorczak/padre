@@ -50,16 +50,16 @@
 <dialog class="consent" data-consent aria-labelledby="consent-title" aria-describedby="consent-desc">
   <p class="consent__kicker" aria-hidden="true">Pliki cookies</p>
   <p class="consent__title" id="consent-title" tabindex="-1">Zgadzasz się na pliki cookies?</p>
-  <p class="consent__desc" id="consent-desc">Dzięki nim wiemy, które posty i reklamy przyprowadzają fanów na koncert. Statystyki odwiedzin (Google Analytics) i pomiar reklam (Meta Pixel) włączamy tylko za Twoją zgodą. Zmienisz ją w każdej chwili w stopce strony („Ustawienia cookies”). Szczegóły w <a href="https://www.live2listen.com/prywatnosc" data-privacy-link target="_blank" rel="noopener">polityce prywatności</a>.</p>
+  <p class="consent__desc" id="consent-desc">Dzięki nim organizator koncertu, L2L sp.&nbsp;z&nbsp;o.o., wie, które posty i reklamy przyciągają tu fanów, i może pokazywać reklamy koncertu na Facebooku i Instagramie osobom, które odwiedziły stronę. Statystyki odwiedzin (Google Analytics) i Meta Pixel włączają się tylko za Twoją zgodą. Zmienisz ją w każdej chwili w stopce strony („Ustawienia cookies”). Szczegóły w <a href="https://www.live2listen.com/prywatnosc" data-privacy-link target="_blank" rel="noopener">polityce prywatności</a>.</p>
   <div class="consent__opts" data-consent-opts hidden>
-    <label class="check"><input type="checkbox" checked disabled> <span>Niezbędne - zawsze aktywne</span></label>
-    <label class="check"><input type="checkbox" data-consent-analytics> <span>Analityczne (statystyki odwiedzin)</span></label>
-    <label class="check"><input type="checkbox" data-consent-marketing> <span>Marketingowe (remarketing i pomiar reklam)</span></label>
+    <label class="check"><input type="checkbox" checked disabled> <span>Niezbędne - zawsze aktywne (zapamiętanie Twojego wyboru)</span></label>
+    <label class="check"><input type="checkbox" data-consent-analytics> <span>Analityczne - Google Analytics: statystyki odwiedzin (pliki cookies _ga, do 13 miesięcy)</span></label>
+    <label class="check"><input type="checkbox" data-consent-marketing> <span>Marketingowe - Meta Pixel: pomiar reklam i reklamy koncertu dla osób, które odwiedziły stronę (pliki cookies _fbp i _fbc, do 90 dni)</span></label>
   </div>
   <div class="consent__actions">
+    <button class="btn btn--ghost consent__save" type="button" data-consent-save hidden>Zapisz wybór</button>
     <button class="btn btn--primary" type="button" data-consent-accept>Akceptuję</button>
     <button class="btn btn--ghost" type="button" data-consent-reject>Tylko niezbędne</button>
-    <button class="btn btn--ghost consent__save" type="button" data-consent-save hidden>Zapisz wybór</button>
     <button class="linklike consent__more" type="button" data-consent-custom>Ustawienia</button>
   </div>
 </dialog>

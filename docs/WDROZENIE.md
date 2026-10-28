@@ -96,7 +96,7 @@ Aktualizacja 21.10.2026: wgrane `/bilety` ze statystykami (paczka 7 plików). Sp
 ## 5. Meta Pixel
 
 - **Zainstalowany (19.10.2026):** piksel `1732539551141809`, ten sam, który działa po stronie eBilet. Zakupy raportuje eBilet, strona raportuje ruch i kliknięcia.
-- Zgodnie z RODO piksel ładuje się dopiero po zgodzie na cookies marketingowe. Przy pierwszej wizycie widać kompaktowy baner („Akceptuję” / „Tylko niezbędne” / „Ustawienia”), a w stopce link „Ustawienia cookies”.
+- Zgodnie z RODO piksel ładuje się dopiero po zgodzie na cookies marketingowe. Przy pierwszej wizycie pokazuje się okno zgody (na komputerze na środku ekranu, na telefonie od dołu), a strona za nim jest przyciemniona do czasu wyboru („Akceptuję” / „Tylko niezbędne” / „Ustawienia”). W stopce jest link „Ustawienia cookies”.
 - Wycofanie zgody w „Ustawienia cookies” wyłącza piksel i GA4, usuwa ich ciasteczka (`_fbp`, `_fbc`, `_ga`) i przeładowuje stronę. Zgoda jest ważna 12 miesięcy; zmiana `CONSENT_V` w `main.js` (np. po dodaniu nowego narzędzia) pyta wszystkich ponownie.
 - Kod jest wpięty w nasz skrypt (`config.js` → `metaPixelId`), a nie wklejony jako osobny snippet. Pomijamy część `<noscript>` z obrazkiem, bo wysyłałaby PageView bez zgody.
 - Zdarzenia: `PageView` (po zgodzie), `ViewContent` (wejście w sekcję biletów), `ClickBuyTicket` (kliknięcie „Kup bilet”, z parametrem `cta_location`: hero, menu, bio, love, bilety, faq, final, sticky). Nie wysyłamy `InitiateCheckout` ani `Purchase`, żeby nie dublować zdarzeń eBilet.

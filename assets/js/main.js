@@ -32,8 +32,9 @@
     } catch (e) { /* brak URLSearchParams */ }
     return found;
   })();
-  // Identyfikatory kliknięcia reklamy (fbclid z Meta, gclid z Google...): tylko do linków „Kup bilet”, jak w /bilety.
-  // Dzięki nim eBilet (po zgodzie w swoim banerze) przypisze zakup do reklamy. Nie trafiają do zdarzeń pomiaru.
+  // Identyfikatory kliknięcia reklamy (fbclid z Meta, gclid z Google...): tylko do linków „Kup bilet” i tylko
+  // za zgodą marketingową (ticketHref). Dzięki nim eBilet (po zgodzie w swoim banerze) przypisze zakup do reklamy.
+  // Nie trafiają do zdarzeń pomiaru (link_url bez nich).
   var CLICK_KEYS = ['fbclid', 'gclid', 'gbraid', 'wbraid', 'ttclid', 'msclkid'];
   var clickIds = (function () {
     var found = {};
@@ -134,13 +135,19 @@
     var cbM = $('[data-consent-marketing]', box);
     var btnSave = $('[data-consent-save]', box);
     var btnCustom = $('[data-consent-custom]', box);
+    var btnAccept = $('[data-consent-accept]', box);
+    var actions = $('.consent__actions', box);
     var opener = null;
+    // Przyciski są przyklejone do dołu okna (CSS): element z fokusem nie może się pod nimi schować.
+    function padForActions() { box.style.scrollPaddingBottom = actions && getComputedStyle(actions).position === 'sticky' ? actions.offsetHeight + 'px' : ''; }
+    window.addEventListener('resize', function () { if (box.hasAttribute('open')) padForActions(); });
     // Okno modalne: strona za nim jest nieaktywna, fokus zostaje w oknie. Bez showModal (stare przeglądarki)
     // okno pokazuje się jak zwykły baner na dole ekranu.
     function show() {
       if (!box.hasAttribute('open')) {
         try { box.showModal(); root.classList.add('consent-open'); } catch (e) { box.setAttribute('open', ''); }
       }
+      padForActions();
       updateSticky();
     }
     function hide() {
@@ -153,6 +160,7 @@
       hide();
       if (withdraw(c)) { location.reload(); return; }
       applyConsent(c);
+      var th = ticketHref(); if (th) $$('[data-ticket]').forEach(function (a) { a.href = th; }); // fbclid dopiero po zgodzie
       var back = opener && opener.isConnected ? opener : doc.getElementById('tresc');
       opener = null;
       if (back) { if (back.id === 'tresc') back.setAttribute('tabindex', '-1'); back.focus({ preventScroll: true }); }
@@ -161,17 +169,22 @@
       var saved = readConsent() || {};
       cbA.checked = !!saved.analytics; cbM.checked = !!saved.marketing;
       opts.hidden = !custom; btnSave.hidden = !custom; btnCustom.hidden = !!custom;
+      // W ustawieniach głównym przyciskiem jest „Zapisz wybór” (zapisuje zaznaczenia), a „Akceptuję” mówi wprost,
+      // że włącza wszystko (CSS: .consent--custom).
+      box.classList.toggle('consent--custom', !!custom);
+      btnAccept.textContent = custom ? 'Akceptuję wszystkie' : 'Akceptuję';
       show();
     }
-    $('[data-consent-accept]', box).addEventListener('click', function () { save({ analytics: true, marketing: true }); });
+    btnAccept.addEventListener('click', function () { save({ analytics: true, marketing: true }); });
     $('[data-consent-reject]', box).addEventListener('click', function () { save({ analytics: false, marketing: false }); });
     btnCustom.addEventListener('click', function () { open(true); cbA.focus(); });
     btnSave.addEventListener('click', function () { save({ analytics: cbA.checked, marketing: cbM.checked }); });
     var reopen = $('[data-consent-open]');
     if (reopen) { reopen.hidden = false; reopen.addEventListener('click', function () { opener = reopen; open(true); cbA.focus(); }); }
-    // Escape (i gest „wstecz” na Androidzie): przy pierwszej wizycie okno zostaje, bo czeka na wybór;
-    // otwarte ze stopki („Ustawienia cookies”) zamyka się bez zmian. Gdyby przeglądarka i tak je zamknęła,
-    // nic nie jest zapisywane: brak zgody, okno wróci przy następnej wizycie.
+    // Escape (i gest „wstecz” na Androidzie) przy pierwszej wizycie: blokujemy zamknięcie, ale Chrome pozwala na to
+    // tylko po interakcji ze stroną (ochrona przed „pułapką” na przycisk wstecz), więc bez kliknięcia pierwszy Escape
+    // i tak zamyka okno, a po kliknięciu dopiero drugi. Wtedy nic nie jest zapisywane: brak zgody, brak trackerów,
+    // okno wróci przy następnej wizycie. Otwarte ze stopki („Ustawienia cookies”) zamyka się bez zmian.
     box.addEventListener('cancel', function (e) { if (!opener) e.preventDefault(); });
     box.addEventListener('close', function () {
       root.classList.remove('consent-open'); updateSticky();
@@ -183,13 +196,15 @@
   }
 
   /* ---------- Bilety ---------- */
-  function ticketHref() {
+  function ticketHref(noClickIds) {
     if (!cfg.ticketUrl) return '';
-    if (!cfg.passUtmToTicketUrl || !(Object.keys(campaign).length || Object.keys(clickIds).length)) return cfg.ticketUrl;
+    var c = readConsent();
+    var ids = !noClickIds && c && c.marketing ? clickIds : {}; // fbclid/gclid tylko za zgodą marketingową
+    if (!cfg.passUtmToTicketUrl || !(Object.keys(campaign).length || Object.keys(ids).length)) return cfg.ticketUrl;
     try {
       var u = new URL(cfg.ticketUrl);
       UTM_KEYS.forEach(function (k) { if (campaign[k] && k.indexOf('utm_') === 0 && !u.searchParams.has(k)) u.searchParams.set(k, campaign[k]); });
-      CLICK_KEYS.forEach(function (k) { if (clickIds[k] && !u.searchParams.has(k)) u.searchParams.set(k, clickIds[k]); });
+      CLICK_KEYS.forEach(function (k) { if (ids[k] && !u.searchParams.has(k)) u.searchParams.set(k, ids[k]); });
       return u.toString();
     } catch (e) { return cfg.ticketUrl; }
   }
@@ -207,7 +222,7 @@
         var hint = $('.visually-hidden', a); if (hint) hint.remove();
       }
       a.addEventListener('click', function () {
-        track('click_buy_ticket', { cta_location: a.getAttribute('data-ticket'), ticket_url_ready: !!href, link_url: href || '#bilety' });
+        track('click_buy_ticket', { cta_location: a.getAttribute('data-ticket'), ticket_url_ready: !!href, link_url: href ? ticketHref(true) : '#bilety' });
       });
     });
     var section = $('[data-view-event]');

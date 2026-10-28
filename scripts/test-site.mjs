@@ -389,19 +389,28 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
   await fut.ctx.close();
   // Okno zgody: nie da się go przeoczyć (modalne, strona przyciemniona i nieaktywna do wyboru),
   // a „Akceptuję” i „Tylko niezbędne” są tak samo duże i widoczne bez przewijania (RODO, art. 399 PKE).
-  for (const [vw, vh, label] of [[320, 568, 'mały telefon'], [390, 664, 'Instagram na iPhonie'], [1366, 768, 'komputer']]) {
-    const d = await open({ width: vw, height: vh }, { mobile: vw < 768, freshConsent: true });
+  // Escape bez wcześniejszej interakcji (prawdziwy pierwszy gość): Chrome zamyka okno (ochrona przycisku „wstecz”),
+  // ale nic się nie zapisuje i nic się nie ładuje. Uwaga: page.evaluate daje „interakcję”, więc Escape przed nim.
+  {
+    const e = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
+    await e.page.keyboard.press('Escape'); await e.page.waitForTimeout(200);
+    const st = await e.page.evaluate(() => ({ stored: localStorage.getItem('pg_consent'), locked: getComputedStyle(document.documentElement).overflow === 'hidden' }));
+    check('Zgoda: okno zamknięte bez wyboru (Escape/wstecz) nic nie zapisuje i nie włącza trackerów', st.stored === null && !st.locked && e.trackerHits.length === 0, JSON.stringify(st));
+    await e.ctx.close();
+  }
+  for (const [vw, vh, label] of [[320, 568, 'mały telefon'], [390, 664, 'Instagram na iPhonie'], [1366, 768, 'komputer'], [844, 340, 'iPhone poziomo w Safari'], [812, 325, 'mały iPhone poziomo']]) {
+    const d = await open({ width: vw, height: vh }, { mobile: vw < 768 || vh < 500, freshConsent: true });
     const m = await d.page.evaluate(() => {
       const box = document.querySelector('[data-consent]'), r = box.getBoundingClientRect();
       const a = document.querySelector('[data-consent-accept]').getBoundingClientRect(), j = document.querySelector('[data-consent-reject]').getBoundingClientRect();
-      return { modal: box.matches(':modal'), focusIn: box.contains(document.activeElement), fits: r.top >= -1 && r.bottom <= innerHeight + 1, btnsVisible: a.bottom <= innerHeight && j.bottom <= innerHeight, same: Math.abs(a.width - j.width) < 1 && Math.abs(a.height - j.height) < 1 && a.height >= 44, locked: getComputedStyle(document.documentElement).overflow === 'hidden' };
+      return { modal: box.matches(':modal'), focusIn: box.contains(document.activeElement), fits: r.top >= -1 && r.bottom <= innerHeight + 1, btnsVisible: Math.max(a.bottom, j.bottom) <= Math.min(innerHeight, r.bottom) + 1 && Math.min(a.top, j.top) >= r.top, same: Math.abs(a.width - j.width) < 1 && Math.abs(a.height - j.height) < 1 && a.height >= 44, locked: getComputedStyle(document.documentElement).overflow === 'hidden' };
     });
     const blocked = await d.page.locator('.hero__cta .btn').first().click({ trial: true, timeout: 800 }).then(() => false, () => true);
     check(`Zgoda (${label}): okno modalne, strona zablokowana do wyboru, fokus w oknie`, m.modal && m.focusIn && m.locked && blocked, JSON.stringify(m));
     check(`Zgoda (${label}): „Akceptuję” i „Tylko niezbędne” tej samej wielkości, widoczne bez przewijania`, m.fits && m.btnsVisible && m.same, JSON.stringify(m));
     if (vw === 390) {
       await d.page.keyboard.press('Escape'); await d.page.waitForTimeout(150);
-      check('Zgoda: Escape przy pierwszej wizycie nie zamyka okna (czeka na wybór)', await d.page.locator('[data-consent]').isVisible());
+      check('Zgoda: po interakcji ze stroną pierwszy Escape nie zamyka okna (czeka na wybór)', await d.page.locator('[data-consent]').isVisible());
       await d.page.click('[data-consent-reject]'); await d.page.waitForTimeout(300);
       const after = await d.page.evaluate(() => ({ open: document.querySelector('[data-consent]').open, locked: getComputedStyle(document.documentElement).overflow === 'hidden' }));
       const free = await d.page.locator('.hero__cta .btn').first().click({ trial: true, timeout: 1500 }).then(() => true, () => false);
@@ -412,10 +421,21 @@ for (const [vp, label] of [[{ width: 390, height: 844 }, 'iPhone 390'], [{ width
     }
     await d.ctx.close();
   }
-  const fb = await open({ width: 390, height: 844 }, { mobile: true, query: 'index.html?utm_source=facebook.com&utm_medium=cpc&utm_content=reel_01&fbclid=IwAR_test-123' });
+  // Kup bilet: utm_* zawsze, fbclid tylko za zgodą marketingową (domyślny kontekst testu = zapisana odmowa).
+  const fbQ = 'index.html?utm_source=facebook.com&utm_medium=cpc&utm_content=reel_01&fbclid=IwAR_test-123';
+  const fb = await open({ width: 390, height: 844 }, { mobile: true, query: fbQ });
   const fbHref = await fb.page.getAttribute('[data-ticket="hero"]', 'href');
-  check('Kup bilet: link przekazuje do eBilet utm_* i identyfikator kliknięcia reklamy (fbclid), z końcówką organizatora', /[?&]partner=l2lsp(&|$)/.test(fbHref) && fbHref.includes('utm_content=reel_01') && fbHref.includes('fbclid=IwAR_test-123') && fbHref.endsWith('#padre-guilherme_155685,1622'), fbHref);
+  check('Kup bilet (odmowa): link do eBilet ma utm_* i końcówkę organizatora, bez fbclid', /[?&]partner=l2lsp(&|$)/.test(fbHref) && fbHref.includes('utm_content=reel_01') && !fbHref.includes('fbclid') && fbHref.endsWith('#padre-guilherme_155685,1622'), fbHref);
   await fb.ctx.close();
+  const fa = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true, query: fbQ });
+  const faBefore = await fa.page.getAttribute('[data-ticket="hero"]', 'href');
+  await fa.page.click('[data-consent-accept]'); await fa.page.waitForTimeout(300);
+  const faHref = await fa.page.getAttribute('[data-ticket="hero"]', 'href');
+  await fa.page.evaluate(() => document.addEventListener('click', (e) => e.preventDefault()));
+  await fa.page.click('[data-ticket="hero"]');
+  const faLinkUrl = (await dl(fa.page)).filter((e) => e.event === 'click_buy_ticket').pop()?.link_url || '';
+  check('Kup bilet (zgoda): fbclid dopiero po „Akceptuję”, z końcówką organizatora; link_url w pomiarze bez fbclid', !faBefore.includes('fbclid') && faHref.includes('fbclid=IwAR_test-123') && faHref.endsWith('#padre-guilherme_155685,1622') && faLinkUrl.includes('utm_content=reel_01') && !faLinkUrl.includes('fbclid'), `${faHref} | ${faLinkUrl}`);
+  await fa.ctx.close();
   const c2 = await open({ width: 390, height: 844 }, { mobile: true, freshConsent: true });
   await c2.page.click('[data-consent-reject]'); await c2.page.waitForTimeout(300);
   await c2.page.reload({ waitUntil: 'networkidle' });

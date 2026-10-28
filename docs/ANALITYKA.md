@@ -11,7 +11,7 @@
 ## Zgoda (Consent Mode v2)
 
 1. Gdy skonfigurowano jakiekolwiek narzędzie, strona ustawia `gtag('consent', 'default', …)` z wartościami `denied` dla `ad_storage`, `analytics_storage`, `ad_user_data` i `ad_personalization`.
-2. Pojawia się baner: „Akceptuję”, „Tylko niezbędne”, „Ustawienia” (osobno analityczne i marketingowe).
+2. Pojawia się okno zgody (modalne, strona za nim przyciemniona do czasu wyboru): „Akceptuję”, „Tylko niezbędne”, „Ustawienia” (osobno analityczne i marketingowe).
 3. Skrypty ładują się **dopiero po zgodzie**:
    - GTM: po zgodzie analitycznej lub marketingowej (tagi w GTM respektują stan zgody),
    - GA4 (bez GTM): po zgodzie analitycznej,
@@ -32,7 +32,7 @@ Działanie potwierdzają testy (`npm test`, sekcja 7): przed zgodą i po „Tylk
 | `submit_accreditation` | Kliknięcie „Złóż wniosek o akredytację” (przejście do Press Accreditations). Samo wysłanie wniosku mierzy system akredytacyjny. | `step: 'outbound_click'`, `link_url` |
 | `newsletter_signup` | Tylko po odpowiedzi 2xx z backendu newslettera. | `form` |
 
-Każde zdarzenie zawiera też `device_type` (mobile / tablet / desktop) i parametry kampanii z adresu (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `gclid`, `fbclid`). Parametry są zapamiętywane w `sessionStorage` na czas wizyty.
+Każde zdarzenie zawiera też `device_type` (mobile / tablet / desktop) i parametry kampanii z adresu (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`). Parametry są brane tylko z adresu strony, bez zapisu w przeglądarce. Identyfikatory kliknięć (`fbclid`, `gclid`...) nie trafiają do zdarzeń; za zgodą marketingową są dopisywane tylko do linków „Kup bilet”.
 
 Meta Pixel (po zgodzie marketingowej): `PageView`, `ViewContent` przy `view_event` i zdarzenie niestandardowe `ClickBuyTicket` przy `click_buy_ticket`. Nie wysyłamy `Purchase` ani `InitiateCheckout`, bo kliknięcie nie oznacza rozpoczęcia ani zakończenia zakupu.
 

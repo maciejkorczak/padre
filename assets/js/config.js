@@ -11,8 +11,8 @@ window.PADRE_CONFIG = {
   // decyzja Marka z 19.10.2026). Wszystkie przyciski „Kup bilet” prowadzą tutaj, UTM są dopisywane do adresu.
   // Adres bez ukośnika przed „?”: wersja z ukośnikiem przekierowuje (301) dokładnie na ten adres.
   ticketUrl: 'https://www.ebilet.pl/muzyka/elektro-techno/padre-guilherme?partner=l2lsp#padre-guilherme_155685,1622',
-  // Dopisuje utm_* i identyfikator kliknięcia reklamy (fbclid, gclid...) z adresu strony do linku eBilet
-  // (atrybucja kampanii i zakupów po stronie sprzedawcy, tak jak przekierowanie /bilety).
+  // Dopisuje utm_* z adresu strony do linku eBilet, a identyfikator kliknięcia reklamy (fbclid, gclid...)
+  // tylko za zgodą marketingową (atrybucja kampanii i zakupów po stronie sprzedawcy).
   passUtmToTicketUrl: true,
 
   // Akredytacje: tymczasowo formularz kontaktowy Live2Listen (decyzja z 19.10.2026).
